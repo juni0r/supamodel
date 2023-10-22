@@ -42,10 +42,6 @@ abstract class BaseModel implements Model {
     return mapValues(
       this.$attributes,
       (value, key) => $transforms[key]?.emit(value) ?? value,
-      // (value, key) => {
-      //   const transform = $transforms[key]
-      //   const value.emit(value) ?? value
-      // },
     )
   }
 
@@ -102,10 +98,3 @@ export function model<S extends Schema>(schema: S) {
     new (): TypeOf<ZodObject<typeof shape>> & BaseModel
   } & ModelClass<typeof shape>
 }
-
-// export const datetime = () => ({
-//   type: date(),
-//   get() {
-//     return new Date(this.$get)
-//   }
-// })
