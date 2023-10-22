@@ -6,16 +6,32 @@ export function Implements<T>() {
   }
 }
 
-// export interface TransformFn<In = unknown, Out = unknown> {
-//   (value: In): Out
-// }
+export interface Values<T = unknown> {
+  [key: string]: T
+}
+
+export interface ModelClass<S extends ZodRawShape = ZodRawShape> {
+  $schema: ZodObject<S>
+  $transforms: Values<Transform>
+}
+
+export interface Model {
+  $attributes: Values
+  $transformedAttributes: Values
+  $takeAttributes(values: Values): void
+  $emitAttributes(): Values
+  $model: ModelClass
+  $get(key: string): unknown
+  $set(key: string, value: unknown): void
+}
+
 export interface TransformFn {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (value: any): unknown
 }
 
 export interface Transform {
-  consume: TransformFn
+  take: TransformFn
   emit: TransformFn
 }
 
@@ -36,17 +52,4 @@ export type ShapeOf<S extends Schema> = {
     : S[Prop] extends ZodSchema
     ? S[Prop]
     : never
-}
-
-export interface ModelClass<S extends ZodRawShape = ZodRawShape> {
-  $schema: ZodObject<S>
-  $transforms: Record<string, Transform>
-}
-
-export interface Model {
-  $attributes: Record<string, unknown>
-  $transformedAttributes: Record<string, unknown>
-  $model: ModelClass
-  $get(key: string): unknown
-  $set(key: string, value: unknown): void
 }

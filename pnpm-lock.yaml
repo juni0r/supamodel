@@ -53,6 +53,9 @@ dependencies:
   lodash.transform:
     specifier: ^4.6.0
     version: 4.6.0
+  luxon:
+    specifier: ^3.4.3
+    version: 3.4.3
   prettier:
     specifier: ^3.0.3
     version: 3.0.3
@@ -79,6 +82,9 @@ devDependencies:
   '@types/lodash.transform':
     specifier: ^4.6.8
     version: 4.6.8
+  '@types/luxon':
+    specifier: ^3.3.3
+    version: 3.3.3
 
 packages:
 
@@ -471,6 +477,10 @@ packages:
 
   /@types/lodash@4.14.200:
     resolution: {integrity: sha512-YI/M/4HRImtNf3pJgbF+W6FrXovqj+T+/HpENLTooK9PnkacBsDpeP3IpHab40CClUfhNmdM2WTNP2sa2dni5Q==}
+
+  /@types/luxon@3.3.3:
+    resolution: {integrity: sha512-/BJF3NT0pRMuxrenr42emRUF67sXwcZCd+S1ksG/Fcf9O7C3kKCY4uJSbKBE4KDUIYr3WMsvfmWD8hRjXExBJQ==}
+    dev: true
 
   /@types/node@20.8.7:
     resolution: {integrity: sha512-21TKHHh3eUHIi2MloeptJWALuCu5H7HQTdTrWIFReA8ad+aggoX+lRes3ex7/FtpC+sVUpFMQ+QTfYr74mruiQ==}
@@ -1426,6 +1436,11 @@ packages:
     engines: {node: '>=10'}
     dependencies:
       yallist: 4.0.0
+    dev: false
+
+  /luxon@3.4.3:
+    resolution: {integrity: sha512-tFWBiv3h7z+T/tDaoxA8rqTxy1CHV6gHS//QdaH4pulbq/JuBSGgQspQQqcgnwdAx6pNI7cmvz5Sv/addzHmUg==}
+    engines: {node: '>=12'}
     dev: false
 
   /magic-string@0.30.5:
