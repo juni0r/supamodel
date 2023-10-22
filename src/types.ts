@@ -1,4 +1,4 @@
-import type { ZodSchema, ZodObject, ZodRawShape } from 'zod'
+import type { ZodSchema, AnyZodObject } from 'zod'
 
 export function Implements<T>() {
   return <U extends T>(constructor: U) => {
@@ -6,27 +6,36 @@ export function Implements<T>() {
   }
 }
 
-export interface Values<T = unknown> {
-  [key: string]: T
-}
-
-export interface ModelClass<S extends ZodRawShape = ZodRawShape> {
-  $schema: ZodObject<S>
-  $transforms: Values<Transform>
+export interface ModelClass<S extends AnyZodObject = AnyZodObject> {
+  $schema: S
+  $transforms: Attributes<Transform>
 }
 
 export interface Model {
-  $attributes: Values
-  $takeAttributes(values: Values): void
-  $emitAttributes(): Values
   $model: ModelClass
+  $attributes: Attributes
+
   $get(key: string): unknown
   $set(key: string, value: unknown): void
+
+  $takeAttributes(values: Attributes): void
+  $emitAttributes(): Attributes
 }
 
-export interface TransformFn {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (value: any): unknown
+export interface Attributes<T = unknown> {
+  [key: string]: T
+}
+
+export interface ModelAttributes {
+  [key: string]: Property | ZodSchema
+}
+
+export type SchemaFrom<S extends ModelAttributes> = {
+  [key in keyof S]: S[key] extends Property
+    ? S[key]['type']
+    : S[key] extends ZodSchema
+    ? S[key]
+    : never
 }
 
 export interface Transform {
@@ -34,21 +43,15 @@ export interface Transform {
   emit: TransformFn
 }
 
+export interface TransformFn {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (value: any): unknown
+}
+
 export interface Property {
   type: ZodSchema
+  transform?: Transform
+
   get?: (this: Model) => unknown
   set?: (this: Model, value: unknown) => void
-  transform?: Transform
-}
-
-export interface Schema {
-  [key: string]: Property | ZodSchema
-}
-
-export type ShapeOf<S extends Schema> = {
-  [Prop in keyof S]: S[Prop] extends Property
-    ? S[Prop]['type']
-    : S[Prop] extends ZodSchema
-    ? S[Prop]
-    : never
 }

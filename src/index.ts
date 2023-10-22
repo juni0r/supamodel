@@ -1,73 +1,62 @@
 import type {
   Model,
   ModelClass,
-  Schema,
-  ShapeOf,
+  ModelAttributes,
+  SchemaFrom,
   Transform,
-  Values,
+  Attributes,
 } from './types'
 import { Implements } from './types'
 
-import type { ZodObject, AnyZodObject, TypeOf } from 'zod'
-import { object, ZodSchema } from 'zod'
+import { object, ZodSchema, type infer as Infer } from 'zod'
 
 import pick from 'lodash.pick'
+import forEach from 'lodash.foreach'
 import snakeCase from 'lodash.snakecase'
 import mapValues from 'lodash.mapvalues'
 
 export * from './schema'
 export * from './types'
 
-@Implements<ModelClass>()
-abstract class BaseModel implements Model {
-  static $schema: AnyZodObject
-  static $transforms: Values<Transform> = {}
+export function model<S extends ModelAttributes>(attributes: S) {
+  const schema = schemaFrom(attributes)
 
-  $attributes: Values = {}
+  @Implements<ModelClass<typeof schema>>()
+  class model implements Model {
+    static $schema = schema
+    static $transforms = {} as Attributes<Transform>
 
-  get $model() {
-    return this.constructor as typeof BaseModel
-  }
+    $attributes: Attributes = {}
 
-  $takeAttributes(values: Values) {
-    const { $transforms } = this.$model
-    this.$attributes = mapValues(
-      values,
-      (value, key) => $transforms[key]?.take(value) ?? value,
-    )
-  }
-
-  $emitAttributes() {
-    const { $transforms } = this.$model
-    return mapValues(
-      this.$attributes,
-      (value, key) => $transforms[key]?.emit(value) ?? value,
-    )
-  }
-
-  $get(key: string) {
-    return this.$attributes[key]
-  }
-
-  $set(key: string, value: unknown) {
-    this.$attributes[key] = value
-  }
-}
-
-export function model<S extends Schema>(schema: S) {
-  const shape = mapValues(schema, (prop) =>
-    prop instanceof ZodSchema ? prop : prop.type,
-  ) as ShapeOf<typeof schema>
-
-  @Implements<ModelClass<typeof shape>>()
-  class Model extends BaseModel {
-    static $schema = object(shape)
     get $model() {
-      return this.constructor as typeof Model
+      return this.constructor as typeof model
+    }
+
+    $get(key: string) {
+      return this.$attributes[key]
+    }
+
+    $set(key: string, value: unknown) {
+      this.$attributes[key] = value
+    }
+
+    $takeAttributes(values: Attributes) {
+      forEach(this.$model.$transforms, (transform, key) => {
+        values[key] = transform.take(values[key])
+      })
+      this.$attributes = values
+    }
+
+    $emitAttributes() {
+      const values = { ...this.$attributes }
+      forEach(this.$model.$transforms, (transform, key) => {
+        values[key] = transform.emit(values[key])
+      })
+      return values
     }
   }
 
-  Object.entries(schema).forEach(([key, options]) => {
+  Object.entries(attributes).forEach(([key, options]) => {
     let property: PropertyDescriptor
 
     if (options instanceof ZodSchema) {
@@ -80,10 +69,10 @@ export function model<S extends Schema>(schema: S) {
     const key_ = snakeCase(key)
 
     if (options.transform) {
-      Model.$transforms[key_] = options.transform
+      model.$transforms[key_] = options.transform
     }
 
-    return Object.defineProperty(Model.prototype, key, {
+    return Object.defineProperty(model.prototype, key, {
       get() {
         return this.$get(key_)
       },
@@ -94,7 +83,15 @@ export function model<S extends Schema>(schema: S) {
     })
   })
 
-  return Model as unknown as {
-    new (): TypeOf<ZodObject<typeof shape>> & BaseModel
-  } & ModelClass<typeof shape>
+  return model as ModelClass<typeof schema> & {
+    new (): model & Infer<typeof schema>
+  }
+}
+
+function schemaFrom<S extends ModelAttributes>(attributes: S) {
+  return object(
+    mapValues(attributes, (prop) =>
+      prop instanceof ZodSchema ? prop : prop.type,
+    ) as SchemaFrom<typeof attributes>,
+  )
 }

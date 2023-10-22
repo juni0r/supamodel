@@ -1,7 +1,7 @@
-import { DateTime } from 'luxon'
 import { describe, it, expect, beforeEach } from 'vitest'
 import { model, transform } from '../src'
 import { string } from 'zod'
+import { DateTime } from 'luxon'
 
 class Subject extends model({
   givenName: string(),
