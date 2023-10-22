@@ -63,6 +63,7 @@
     "lodash.mapvalues": "^4.6.0",
     "lodash.pick": "^4.4.0",
     "lodash.snakecase": "^4.1.1",
+    "lodash.transform": "^4.6.0",
     "prettier": "^3.0.3",
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
@@ -70,5 +71,8 @@
     "typescript": "^5.2.2",
     "vitest": "^0.34.6",
     "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/lodash.transform": "^4.6.8"
   }
 }

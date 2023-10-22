@@ -50,6 +50,9 @@ dependencies:
   lodash.snakecase:
     specifier: ^4.1.1
     version: 4.1.1
+  lodash.transform:
+    specifier: ^4.6.0
+    version: 4.6.0
   prettier:
     specifier: ^3.0.3
     version: 3.0.3
@@ -71,6 +74,11 @@ dependencies:
   zod:
     specifier: ^3.22.4
     version: 3.22.4
+
+devDependencies:
+  '@types/lodash.transform':
+    specifier: ^4.6.8
+    version: 4.6.8
 
 packages:
 
@@ -455,9 +463,14 @@ packages:
       '@types/lodash': 4.14.200
     dev: false
 
+  /@types/lodash.transform@4.6.8:
+    resolution: {integrity: sha512-gl7Ey4hpiX/gusvvYmBHEq3+9IrTJrr6wBXHgp0HvfxOckCh5U0odRF4Mp1hHnFJBRP7bCrU1gESqGJ9To6idw==}
+    dependencies:
+      '@types/lodash': 4.14.200
+    dev: true
+
   /@types/lodash@4.14.200:
     resolution: {integrity: sha512-YI/M/4HRImtNf3pJgbF+W6FrXovqj+T+/HpENLTooK9PnkacBsDpeP3IpHab40CClUfhNmdM2WTNP2sa2dni5Q==}
-    dev: false
 
   /@types/node@20.8.7:
     resolution: {integrity: sha512-21TKHHh3eUHIi2MloeptJWALuCu5H7HQTdTrWIFReA8ad+aggoX+lRes3ex7/FtpC+sVUpFMQ+QTfYr74mruiQ==}
@@ -1396,6 +1409,10 @@ packages:
 
   /lodash.snakecase@4.1.1:
     resolution: {integrity: sha512-QZ1d4xoBHYUeuouhEq3lk3Uq7ldgyFXGBhg04+oRLnIz8o9T65Eh+8YdroUwn846zchkA9yDsDl5CVVaV2nqYw==}
+    dev: false
+
+  /lodash.transform@4.6.0:
+    resolution: {integrity: sha512-LO37ZnhmBVx0GvOU/caQuipEh4GN82TcWv3yHlebGDgOxbxiwwzW5Pcx2AcvpIv2WmvmSMoC492yQFNhy/l/UQ==}
     dev: false
 
   /loupe@2.3.7:
