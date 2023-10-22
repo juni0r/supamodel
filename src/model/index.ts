@@ -1,8 +1,9 @@
+import { Implements } from './types'
+import type { Model, ModelClass, Schema, ShapeOf } from './types'
 import {
   object,
   ZodSchema,
   type ZodObject,
-  type ZodRawShape,
   type AnyZodObject,
   type TypeOf,
 } from 'zod'
@@ -11,17 +12,10 @@ import mapValues from 'lodash.mapvalues'
 import forEach from 'lodash.foreach'
 import pick from 'lodash.pick'
 
-function Implements<T>() {
-  return <U extends T>(constructor: U) => {
-    constructor
-  }
-}
+export * from 'zod'
 
-interface ModelClass<S extends ZodRawShape> {
-  $schema: ZodObject<S>
-}
-
-abstract class Model {
+@Implements<ModelClass>()
+abstract class BaseModel implements Model {
   static $schema: AnyZodObject
 
   $attributes: Record<string, unknown> = {}
@@ -35,37 +29,19 @@ abstract class Model {
   }
 }
 
-interface Property {
-  type: ZodSchema
-  get?: (this: Model) => unknown
-  set?: (this: Model, value: unknown) => void
-}
-
-interface Schema {
-  [key: string]: Property | ZodSchema
-}
-
-type ShapeOf<S extends Schema> = {
-  [Prop in keyof S]: S[Prop] extends Property
-    ? S[Prop]['type']
-    : S[Prop] extends ZodSchema
-    ? S[Prop]
-    : never
-}
-
 export function model<S extends Schema>(schema: S) {
   const shape = mapValues(schema, (prop) =>
     prop instanceof ZodSchema ? prop : prop.type,
   ) as ShapeOf<typeof schema>
 
   @Implements<ModelClass<typeof shape>>()
-  class model extends Model {
+  class Model extends BaseModel {
     static $schema = object(shape)
   }
 
   forEach(schema, (prop, key) => {
     const key_ = snakeCase(key)
-    return Object.defineProperty(model.prototype, key, {
+    return Object.defineProperty(Model.prototype, key, {
       get() {
         return this.$get(key_)
       },
@@ -76,7 +52,7 @@ export function model<S extends Schema>(schema: S) {
     })
   })
 
-  return model as unknown as {
-    new (): TypeOf<ZodObject<typeof shape>> & Model
+  return Model as unknown as {
+    new (): TypeOf<ZodObject<typeof shape>> & BaseModel
   } & ModelClass<typeof shape>
 }
