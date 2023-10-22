@@ -24,7 +24,6 @@ abstract class BaseModel implements Model {
   static $transforms: Values<Transform> = {}
 
   $attributes: Values = {}
-  $transformedAttributes: Values = {}
 
   get $model() {
     return this.constructor as typeof BaseModel
@@ -43,6 +42,10 @@ abstract class BaseModel implements Model {
     return mapValues(
       this.$attributes,
       (value, key) => $transforms[key]?.emit(value) ?? value,
+      // (value, key) => {
+      //   const transform = $transforms[key]
+      //   const value.emit(value) ?? value
+      // },
     )
   }
 

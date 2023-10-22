@@ -17,7 +17,6 @@ export interface ModelClass<S extends ZodRawShape = ZodRawShape> {
 
 export interface Model {
   $attributes: Values
-  $transformedAttributes: Values
   $takeAttributes(values: Values): void
   $emitAttributes(): Values
   $model: ModelClass

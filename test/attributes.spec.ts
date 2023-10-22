@@ -14,7 +14,7 @@ class Subject extends model({
   }
 }
 
-describe('Model attributes', () => {
+describe('Attributes', () => {
   let subject: Subject
 
   beforeEach(() => {
@@ -22,8 +22,8 @@ describe('Model attributes', () => {
     subject.$takeAttributes({
       given_name: 'Stella',
       family_name: 'Goldbacke',
-      date: '2020-02-02T02:02:02Z',
-      date_time: '2020-02-02T02:02:02Z',
+      date: '2020-02-02T02:02:02.020Z',
+      date_time: '2020-02-02T02:02:02.020Z',
     })
   })
 
@@ -37,13 +37,19 @@ describe('Model attributes', () => {
     expect(subject.name).toBe('Tom Goldbacke')
   })
 
-  it('reads dates', () => {
+  it('takes dates', () => {
     expect(subject.date).toBeInstanceOf(Date)
-    expect(subject.date.toISOString()).toBe('2020-02-02T02:02:02.000Z')
   })
 
-  it('reads datetimes', () => {
+  it('emits dates', () => {
+    expect(subject.$emitAttributes().date).toBe('2020-02-02T02:02:02.020Z')
+  })
+
+  it('takes datetimes', () => {
     expect(subject.dateTime).toBeInstanceOf(DateTime)
-    expect(subject.dateTime.toISO()).toBe('2020-02-02T02:02:02.000Z')
+  })
+
+  it('emits datetimes', () => {
+    expect(subject.$emitAttributes().date_time).toBe('2020-02-02T02:02:02.020Z')
   })
 })
