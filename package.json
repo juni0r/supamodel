@@ -2,7 +2,6 @@
   "name": "supabase-model",
   "version": "1.0.0",
   "description": "",
-  "type": "module",
   "engines": {
     "node": ">=20.7.0 <21.0.0"
   },
@@ -14,7 +13,9 @@
   },
   "eslintConfig": {
     "parser": "@typescript-eslint/parser",
-    "ignorePatterns": ["dist"],
+    "ignorePatterns": [
+      "dist"
+    ],
     "parserOptions": {
       "ecmaVersion": 2023,
       "sourceType": "module"
@@ -46,7 +47,7 @@
   "keywords": [],
   "author": "",
   "license": "MIT",
-  "devDependencies": {
+  "dependencies": {
     "@types/lodash.foreach": "^4.5.8",
     "@types/lodash.mapvalues": "^4.6.8",
     "@types/lodash.pick": "^4.4.8",
@@ -58,17 +59,15 @@
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-deprecation": "^2.0.0",
     "eslint-plugin-prettier": "^5.0.0",
-    "prettier": "^3.0.3",
-    "tsx": "^3.13.0",
-    "type-fest": "^4.5.0",
-    "typescript": "^5.2.2"
-  },
-  "dependencies": {
     "lodash.foreach": "^4.5.0",
     "lodash.mapvalues": "^4.6.0",
     "lodash.pick": "^4.4.0",
     "lodash.snakecase": "^4.1.1",
-    "reflect-metadata": "^0.1.13",
+    "prettier": "^3.0.3",
+    "ts-node": "^10.9.1",
+    "tsconfig-paths": "^4.2.0",
+    "type-fest": "^4.5.0",
+    "typescript": "^5.2.2",
     "zod": "^3.22.4"
   }
 }
