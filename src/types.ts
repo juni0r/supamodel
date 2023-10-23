@@ -1,4 +1,4 @@
-import type { ZodSchema, AnyZodObject } from 'zod'
+import type { ZodSchema, AnyZodObject, TypeOf } from 'zod'
 
 export function Implements<T>() {
   return <U extends T>(constructor: U) => {
@@ -9,11 +9,16 @@ export function Implements<T>() {
 export interface ModelClass<S extends AnyZodObject = AnyZodObject> {
   $schema: S
   $transforms: Attributes<Transform>
+  $keyMap: KeyMap<TypeOf<S>>
 }
 
 export interface Model {
   $model: ModelClass
   $attributes: Attributes
+  $dirty: Attributes
+  $changed: Attributes<boolean>
+
+  readonly $isDirty: boolean
 
   $get(key: string): unknown
   $set(key: string, value: unknown): void
@@ -30,12 +35,16 @@ export interface ModelAttributes {
   [key: string]: Property | ZodSchema
 }
 
-export type SchemaFrom<S extends ModelAttributes> = {
-  [key in keyof S]: S[key] extends Property
-    ? S[key]['type']
-    : S[key] extends ZodSchema
-    ? S[key]
+export type NormalizedAttributes<A extends ModelAttributes> = {
+  [key in keyof A]: A[key] extends ZodSchema
+    ? Property<A[key]>
+    : A[key] extends Property
+    ? A[key]
     : never
+}
+
+export type SchemaFrom<P extends Properties> = {
+  [key in keyof P]: P[key] extends Property ? P[key]['type'] : never
 }
 
 export interface Transform {
@@ -48,10 +57,22 @@ export interface TransformFn {
   (value: any): unknown
 }
 
-export interface Property {
-  type: ZodSchema
+export interface Property<T = ZodSchema> {
+  type: T
   transform?: Transform
 
   get?: (this: Model) => unknown
   set?: (this: Model, value: unknown) => void
+}
+
+export interface Properties {
+  [key: string]: Property
+}
+
+export type Changed<T = AnyZodObject> = {
+  [key in keyof T]: boolean
+}
+
+export type KeyMap<T = AnyZodObject> = {
+  [key in keyof T]: string
 }
