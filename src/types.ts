@@ -1,4 +1,4 @@
-import type { ZodSchema, AnyZodObject, TypeOf } from 'zod'
+import type { ZodSchema, AnyZodObject } from 'zod'
 
 export function Implements<T>() {
   return <U extends T>(constructor: U) => {
@@ -8,8 +8,8 @@ export function Implements<T>() {
 
 export interface ModelClass<S extends AnyZodObject = AnyZodObject> {
   $schema: S
+  $keyMap: Attributes<string>
   $transforms: Attributes<Transform>
-  $keyMap: KeyMap<TypeOf<S>>
 }
 
 export interface Model {
@@ -31,11 +31,11 @@ export interface Attributes<T = unknown> {
   [key: string]: T
 }
 
-export interface ModelAttributes {
+export interface ModelOptions {
   [key: string]: Property | ZodSchema
 }
 
-export type NormalizedAttributes<A extends ModelAttributes> = {
+export type NormalizedOptions<A extends ModelOptions> = {
   [key in keyof A]: A[key] extends ZodSchema
     ? Property<A[key]>
     : A[key] extends Property

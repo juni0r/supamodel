@@ -42,6 +42,7 @@ describe('Model', () => {
 
   it('is dirty when date property is changed', () => {
     const previous = new Date(subject.date)
+
     subject.date = new Date()
     expect(subject.$isDirty).toBe(true)
     expect(subject.$changed.date).toBe(true)
@@ -54,6 +55,7 @@ describe('Model', () => {
 
   it('is dirty when datetime property is changed', () => {
     const previous = subject.dateTime.plus({})
+
     subject.dateTime = DateTime.now()
     expect(subject.$isDirty).toBe(true)
     expect(subject.$changed.dateTime).toBe(true)

@@ -1,3 +1,7 @@
 {
   "vitest.enable": true,
+  "editor.tokenColorCustomizations": {
+    "comments": "",
+    "textMateRules": []
+  },
 }

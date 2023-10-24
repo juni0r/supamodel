@@ -1,14 +1,12 @@
 import type {
   Model,
   ModelClass,
-  ModelAttributes,
+  ModelOptions,
   SchemaFrom,
   Transform,
   Attributes,
   Changed,
-  KeyMap,
-  NormalizedAttributes,
-  Properties,
+  NormalizedOptions,
 } from './types'
 import { Implements } from './types'
 
@@ -26,50 +24,79 @@ export * from './types'
 
 const { hasOwnProperty } = Object.prototype
 
-export function model<T extends ModelAttributes>(_attributes: T) {
-  const attributes = normalize(_attributes)
-  const schema = schemaFrom(attributes)
+/**
+ * Description placeholder
+ * @date 23/10/2023 - 22:43:09
+ *
+ * @export
+ * @param {T} _options The options for the model
+ * @returns {ModelClass} This function generates a model class based on the
+ * provided options. The generated class implements the Model interface and has
+ * methods for getting and setting attributes, tracking attribute changes,
+ * taking and emitting attributes, and transforming attribute values.
+ */
+export function model<T extends ModelOptions>(_options: T) {
+  const options = normalize(_options)
 
+  const schema = object(
+    mapValues(options, 'type') as SchemaFrom<typeof options>,
+  )
   type Schema = Infer<typeof schema>
 
   @Implements<ModelClass<typeof schema>>()
   class model implements Model {
     static $schema = schema
-    static $transforms = {} as Attributes<Transform>
-    static $keyMap = {} as KeyMap<Schema>
+    static $transforms: Attributes<Transform> = {}
+    static $keyMap: Attributes<string> = {}
 
     $attributes: Attributes = {}
-    $dirty = {} as Partial<Schema>
-    $changed = new Proxy(this, changedHandler) as Changed<Schema>
+    $dirty: Partial<Schema> = {}
+
+    $changed = new Proxy(this.$dirty, {
+      get: (target, key) => hasOwnProperty.call(target, key),
+    }) as Changed<Schema>
 
     get $model() {
-      return this.constructor as typeof model
+      return model
     }
 
     get $isDirty() {
       return !isEmpty(this.$dirty)
     }
 
-    $get(key: string) {
-      return this.$attributes[model.$keyMap[key]]
+    /**
+     * Get attribute value for the given key
+     *
+     * @param {K} key The key of the attribute to get
+     */
+    $get<K extends keyof Schema>(key: K) {
+      return this.$attributes[model.$keyMap[key as string]] as Schema[K]
     }
 
-    $set(key: keyof Schema, value: unknown) {
-      const _key = model.$keyMap[key]
-      const current = this.$attributes[_key] as Schema[typeof key]
+    /**
+     * Set attribute value for the given key
+     *
+     * @param {K} key The key of the attribute to set
+     * @param {Schema[K]} value The value to set for the attribute
+     */
+    $set<K extends keyof Schema>(key: K, value: Schema[K]) {
+      const _key = model.$keyMap[key as string]
 
       if (key in this.$dirty) {
         if (isEqual(value, this.$dirty[key])) {
           delete this.$dirty[key]
         }
-      } else if (!isEqual(value, current)) {
-        this.$dirty[key] = current
+      } else {
+        const current = this.$attributes[_key]
+        if (!isEqual(value, current)) {
+          this.$dirty[key] = current as typeof value
+        }
       }
       this.$attributes[_key] = value
     }
 
     $takeAttributes(values: Attributes) {
-      forEach(this.$model.$transforms, (transform, key) => {
+      forEach(model.$transforms, (transform, key) => {
         values[key] = transform.take(values[key])
       })
       this.$attributes = values
@@ -77,31 +104,30 @@ export function model<T extends ModelAttributes>(_attributes: T) {
 
     $emitAttributes() {
       const values = { ...this.$attributes }
-      forEach(this.$model.$transforms, (transform, key) => {
+      forEach(model.$transforms, (transform, key) => {
         values[key] = transform.emit(values[key])
       })
       return values
     }
   }
 
-  Object.keys(schema).forEach((key) => {
-    const options = attributes[key]
-    const property = pick(options, 'get', 'set')
+  const { $keyMap, $transforms, prototype } = model
 
-    model.$keyMap[key as keyof Schema] = snakeCase(key)
+  forEach(options, (option, key) => {
+    $keyMap[key] = snakeCase(key)
 
-    if (options.transform) {
-      model.$transforms[model.$keyMap[key]] = options.transform
+    if (option.transform) {
+      $transforms[$keyMap[key]] = option.transform
     }
 
-    return Object.defineProperty(model.prototype, key, {
+    return Object.defineProperty(prototype, key, {
       get() {
         return this.$get(key)
       },
       set(value: unknown) {
         this.$set(key, value)
       },
-      ...property,
+      ...pick(option, 'get', 'set'),
     })
   })
 
@@ -110,18 +136,8 @@ export function model<T extends ModelAttributes>(_attributes: T) {
   }
 }
 
-function normalize<T extends ModelAttributes>(attrs: T) {
+function normalize<T extends ModelOptions>(attrs: T) {
   return mapValues(attrs, (prop) =>
     prop instanceof ZodSchema ? { type: prop } : prop,
-  ) as NormalizedAttributes<T>
-}
-
-function schemaFrom<T extends Properties>(attributes: T) {
-  return object(mapValues(attributes, ({ type }) => type) as SchemaFrom<T>)
-}
-
-const changedHandler: ProxyHandler<Model> = {
-  get(target, key) {
-    return hasOwnProperty.call(target.$dirty, key)
-  },
+  ) as NormalizedOptions<T>
 }
