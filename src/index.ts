@@ -10,7 +10,7 @@ import type {
 } from './types'
 import { Implements } from './types'
 
-import { object, ZodSchema, type infer as Infer } from 'zod'
+import { object, ZodSchema, type infer as Infer, ZodIssue, ZodError } from 'zod'
 
 import pick from 'lodash.pick'
 import forEach from 'lodash.foreach'
@@ -109,6 +109,18 @@ export function model<T extends ModelOptions>(_options: T) {
       })
       return values
     }
+
+    async validate() {
+      try {
+        Object.assign(this, await model.$schema.parseAsync(this))
+      } catch (error) {
+        if (error instanceof ZodError) {
+          return Issues.from(error.issues)
+        }
+        throw error
+      }
+      return new Issues()
+    }
   }
 
   const { $keyMap, $transforms, prototype } = model
@@ -140,4 +152,16 @@ function normalize<T extends ModelOptions>(attrs: T) {
   return mapValues(attrs, (prop) =>
     prop instanceof ZodSchema ? { type: prop } : prop,
   ) as NormalizedOptions<T>
+}
+
+export class Issues extends Array<ZodIssue> {
+  static from(issues: ZodIssue[]) {
+    return Object.setPrototypeOf(issues, this.prototype) as Issues
+  }
+  get any() {
+    return this.length > 0
+  }
+  get none() {
+    return this.length === 0
+  }
 }

@@ -1,4 +1,5 @@
-import type { ZodSchema, AnyZodObject } from 'zod'
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import type { ZodSchema, AnyZodObject, ZodIssue } from 'zod'
 
 export function Implements<T>() {
   return <U extends T>(constructor: U) => {
@@ -25,6 +26,13 @@ export interface Model {
 
   $takeAttributes(values: Attributes): void
   $emitAttributes(): Attributes
+
+  validate(): Promise<Issues>
+}
+
+export interface Issues extends Array<ZodIssue> {
+  any: boolean
+  none: boolean
 }
 
 export interface Attributes<T = unknown> {
@@ -36,8 +44,8 @@ export interface ModelOptions {
 }
 
 export type NormalizedOptions<A extends ModelOptions> = {
-  [key in keyof A]: A[key] extends ZodSchema
-    ? Property<A[key]>
+  [key in keyof A]: A[key] extends ZodSchema<infer T>
+    ? Property<T>
     : A[key] extends Property
     ? A[key]
     : never
@@ -47,22 +55,25 @@ export type SchemaFrom<P extends Properties> = {
   [key in keyof P]: P[key] extends Property ? P[key]['type'] : never
 }
 
-export interface Transform {
-  take: TransformFn
-  emit: TransformFn
+export interface Transform<External = any, Internal = any> {
+  take: TransformFn<External, Internal>
+  emit: TransformFn<Internal, External>
 }
 
-export interface TransformFn {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (value: any): unknown
+export interface TransformFn<External = any, Internal = any> {
+  (value: External): Internal
 }
 
-export interface Property<T = ZodSchema> {
-  type: T
-  transform?: Transform
+export interface Property<
+  T = any,
+  U = any,
+  S extends ZodSchema<T> = ZodSchema<T>,
+> {
+  type: S
+  transform?: Transform<T, U>
 
-  get?: (this: Model) => unknown
-  set?: (this: Model, value: unknown) => void
+  get?: (this: Model) => T
+  set?: (this: Model, value: T) => void
 }
 
 export interface Properties {

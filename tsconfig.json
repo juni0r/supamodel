@@ -1,13 +1,14 @@
 {
   "compilerOptions": {
-    "target": "es6",
-    "module": "commonjs",
+    "target": "es2022",
+    "module": "nodenext",
     "outDir": "dist",
     "strictPropertyInitialization": false,
     "sourceMap": true,
     "allowJs": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
+    "moduleResolution": "nodenext",
     "resolveJsonModule": true,
     "strict": true,
     "noImplicitAny": true,
@@ -18,5 +19,5 @@
   "include": ["src/*.ts", "src/**/*.ts"],
   "exclude": ["node_modules"],
   "typeRoots": ["node_modules/@types"],
-  "lib": ["es2023"]
+  "lib": ["es2022"]
 }
