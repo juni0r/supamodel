@@ -35,12 +35,7 @@ supabase
       return
     }
     const [dbRecord] = data
-    console.log(dbRecord)
-
     const record = new Record(dbRecord)
-    console.log(record)
-    console.log(record.$emit())
 
     console.log(record.toJSON())
-    console.log(JSON.stringify(record, null, 2))
   })

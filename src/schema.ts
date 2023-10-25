@@ -24,9 +24,9 @@ declare module 'luxon' {
   }
 }
 
-DateTime.prototype[util.inspect.custom] = function (_depth, options) {
+DateTime.prototype[util.inspect.custom] = function (_depth, { stylize }) {
   const value = this.toISO()
   return value
-    ? options.stylize(`[ ${value} ]`, 'date')
-    : options.stylize('[invalid date]', 'special')
+    ? [stylize(`LUXON`, 'undefined'), stylize(value, 'special')].join(' ')
+    : stylize('[invalid date]', 'special')
 }

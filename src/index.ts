@@ -70,19 +70,19 @@ export function defineModel<A = Record<string, Attribute>>(
     }
 
     protected $set<K extends keyof Schema>(key: K, value: Schema[K]) {
-      const _key = attributes[key].column
+      const { column } = attributes[key]
 
       if (key in this.$dirty) {
         if (isEqual(value, this.$dirty[key])) {
           delete this.$dirty[key]
         }
       } else {
-        const current = this.$attributes[_key]
+        const current = this.$attributes[column]
         if (!isEqual(value, current)) {
           this.$dirty[key] = current as typeof value
         }
       }
-      this.$attributes[_key] = value
+      this.$attributes[column] = value
     }
 
     $take(values: AnyObject) {
