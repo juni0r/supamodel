@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { defineModel, attr as $ } from '../src'
-import { datetime, transform } from '../src/schema'
+import { defineModel, attr as $, datetime, transform } from '../src'
 import { string, date } from 'zod'
 
 class Subject extends defineModel({
@@ -14,8 +13,7 @@ describe('Validation', () => {
   let subject: Subject
 
   beforeEach(() => {
-    subject = new Subject()
-    subject.$takeAttributes({
+    subject = new Subject({
       given_name: 'Stella',
       family_name: null,
       date: '2020-02-02T02:02:02.020Z',

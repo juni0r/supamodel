@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { TypeOf, ZodSchema } from 'zod'
+import type { TypeOf, ZodObject, ZodSchema } from 'zod'
 
 export function Implements<T>() {
   return <U extends T>(constructor: U) => {
@@ -11,6 +11,12 @@ export interface AnyObject<T = unknown> {
   [key: string]: T
 }
 
+export interface Model<A extends Attributes> {
+  $attributes: A
+  $schema: ZodObject<ShapeFrom<A>>
+  $transforms: AnyObject<Transform>
+}
+
 export interface Attribute<Z extends ZodSchema = ZodSchema> {
   type: Z
   column: string
@@ -19,27 +25,19 @@ export interface Attribute<Z extends ZodSchema = ZodSchema> {
   emit?: (value: TypeOf<Z>) => any
 }
 
-export type Infer<T extends Record<string, Attribute>> = {
-  [k in keyof T]: T[k] extends Attribute<any> ? TypeOf<T[k]['type']> : never
-}
-
-export type SchemaFrom<T> = {
-  [k in keyof T]: T[k] extends Attribute<any> ? T[k]['type'] : never
-}
-
-export type TypedAttributes<T> = {
+export type Attributes<T = Record<string, Attribute>> = {
   [k in keyof T]: T[k] extends Attribute<any> ? T[k] : never
 }
 
-export type Changed<T> = {
-  [key in keyof T]: boolean
+export type SchemaFrom<T> = {
+  [k in keyof T]: T[k] extends Attribute<any> ? TypeOf<T[k]['type']> : never
+}
+
+export type ShapeFrom<T> = {
+  [k in keyof T]: T[k] extends Attribute<any> ? T[k]['type'] : never
 }
 
 export interface Transform {
-  take: TransformFn
-  emit: TransformFn
-}
-
-export interface TransformFn<I = any, O = any> {
-  (value: I): O
+  take: (v: any) => any
+  emit: (v: any) => any
 }

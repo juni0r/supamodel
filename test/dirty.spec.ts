@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { defineModel, attr as $ } from '../src'
-import { datetime, transform } from '../src/schema'
+import { defineModel, attr as $, datetime, transform } from '../src'
 import { string, date, number, boolean } from 'zod'
 import { DateTime } from 'luxon'
 
@@ -16,8 +15,7 @@ describe('Model', () => {
   let subject: Subject
 
   beforeEach(() => {
-    subject = new Subject()
-    subject.$takeAttributes({
+    subject = new Subject({
       name: 'Stella',
       position: 23,
       is_okay: true,

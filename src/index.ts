@@ -3,16 +3,15 @@ import type { ZodIssue, ZodSchema } from 'zod'
 import type { Simplify } from 'type-fest'
 
 import type {
-  Infer,
-  Changed,
   SchemaFrom,
+  ShapeFrom,
   Attribute,
   Transform,
-  TypedAttributes,
+  Attributes,
   AnyObject,
+  Model,
 } from './types'
 
-import pick from 'lodash.pick'
 import forEach from 'lodash.foreach'
 import mapValues from 'lodash.mapvalues'
 import snakeCase from 'lodash.snakecase'
@@ -20,6 +19,8 @@ import isEmpty from 'lodash.isempty'
 import isEqual from 'fast-deep-equal'
 
 import { ZodError, object } from 'zod'
+
+export * from './schema'
 
 const { hasOwnProperty } = Object.prototype
 
@@ -31,27 +32,25 @@ export const attr = <Z extends ZodSchema>(
 ) => ({ type, primary: false, column: '', ...options })
 
 export function defineModel<Attrs = Record<string, Attribute>>(
-  attributes: TypedAttributes<Attrs>,
+  attributes: Attributes<Attrs>,
 ) {
   forEach(attributes, (attr, key) => {
     attr.column ||= snakeCase(key)
   })
 
-  type schema = Infer<typeof attributes>
+  type schema = SchemaFrom<typeof attributes>
 
   class model {
     static $attributes = attributes
     static $transforms: AnyObject<Transform> = {}
-    static $schema = object(mapValues(attributes, 'type') as SchemaFrom<Attrs>)
+    static $schema = object(mapValues(attributes, 'type') as ShapeFrom<Attrs>)
 
     $attributes: AnyObject = {}
     $dirty: Partial<schema> = {}
-    $changed = new Proxy(this.$dirty, {
-      get: (target, key) => hasOwnProperty.call(target, key),
-    }) as Changed<schema>
+    $changed = hasKey(this.$dirty) as Record<keyof schema, boolean>
 
     constructor(value?: AnyObject) {
-      if (value) this.$takeAttributes(value)
+      if (value) this.$take(value)
     }
 
     get $model() {
@@ -82,14 +81,14 @@ export function defineModel<Attrs = Record<string, Attribute>>(
       this.$attributes[_key] = value
     }
 
-    $takeAttributes(values: AnyObject) {
+    $take(values: AnyObject) {
       forEach(model.$transforms, (transform, key) => {
         values[key] = transform.take(values[key])
       })
       this.$attributes = values
     }
 
-    $emitAttributes() {
+    $emit() {
       const values = { ...this.$attributes }
       forEach(model.$transforms, (transform, key) => {
         values[key] = transform.emit(values[key])
@@ -126,13 +125,18 @@ export function defineModel<Attrs = Record<string, Attribute>>(
       set(value: unknown) {
         this.$set(key, value)
       },
-      ...pick(option, 'get', 'set'),
     })
   })
 
-  return model as {
+  return model as Model<typeof attributes> & {
     new (value?: AnyObject): Simplify<model & schema>
   }
+}
+
+function hasKey<T extends object = object>(target: T) {
+  return new Proxy(target, {
+    get: (target, key) => hasOwnProperty.call(target, key),
+  })
 }
 
 export class Issues extends Array<ZodIssue> {
