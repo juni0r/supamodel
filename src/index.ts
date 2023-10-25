@@ -1,60 +1,58 @@
-import type {
-  Model,
-  ModelClass,
-  ModelOptions,
-  SchemaFrom,
-  Transform,
-  Attributes,
-  Changed,
-  NormalizedOptions,
-} from './types'
-import { Implements } from './types'
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import type { ZodIssue, ZodSchema } from 'zod'
+import type { Simplify } from 'type-fest'
 
-import { object, ZodSchema, type infer as Infer, ZodIssue, ZodError } from 'zod'
+import type {
+  Infer,
+  Changed,
+  SchemaFrom,
+  Attribute,
+  Transform,
+  TypedAttributes,
+  AnyObject,
+} from './types'
 
 import pick from 'lodash.pick'
 import forEach from 'lodash.foreach'
-import snakeCase from 'lodash.snakecase'
 import mapValues from 'lodash.mapvalues'
+import snakeCase from 'lodash.snakecase'
 import isEmpty from 'lodash.isempty'
 import isEqual from 'fast-deep-equal'
 
-export * from './schema'
-export * from './types'
+import { ZodError, object } from 'zod'
 
 const { hasOwnProperty } = Object.prototype
 
-/**
- * Description placeholder
- * @date 23/10/2023 - 22:43:09
- *
- * @export
- * @param {T} _options The options for the model
- * @returns {ModelClass} This function generates a model class based on the
- * provided options. The generated class implements the Model interface and has
- * methods for getting and setting attributes, tracking attribute changes,
- * taking and emitting attributes, and transforming attribute values.
- */
-export function model<T extends ModelOptions>(_options: T) {
-  const options = normalize(_options)
+const identity = (v: any) => v
 
-  const schema = object(
-    mapValues(options, 'type') as SchemaFrom<typeof options>,
-  )
-  type Schema = Infer<typeof schema>
+export const attr = <Z extends ZodSchema>(
+  type: Z,
+  options?: Partial<Omit<Attribute<Z>, 'type'>>,
+) => ({ type, primary: false, column: '', ...options })
 
-  @Implements<ModelClass<typeof schema>>()
-  class model implements Model {
-    static $schema = schema
-    static $transforms: Attributes<Transform> = {}
-    static $keyMap: Attributes<string> = {}
+export function defineModel<Attrs = Record<string, Attribute>>(
+  attributes: TypedAttributes<Attrs>,
+) {
+  forEach(attributes, (attr, key) => {
+    attr.column ||= snakeCase(key)
+  })
 
-    $attributes: Attributes = {}
-    $dirty: Partial<Schema> = {}
+  type schema = Infer<typeof attributes>
 
+  class model {
+    static $attributes = attributes
+    static $transforms: AnyObject<Transform> = {}
+    static $schema = object(mapValues(attributes, 'type') as SchemaFrom<Attrs>)
+
+    $attributes: AnyObject = {}
+    $dirty: Partial<schema> = {}
     $changed = new Proxy(this.$dirty, {
       get: (target, key) => hasOwnProperty.call(target, key),
-    }) as Changed<Schema>
+    }) as Changed<schema>
+
+    constructor(value?: AnyObject) {
+      if (value) this.$takeAttributes(value)
+    }
 
     get $model() {
       return model
@@ -64,23 +62,12 @@ export function model<T extends ModelOptions>(_options: T) {
       return !isEmpty(this.$dirty)
     }
 
-    /**
-     * Get attribute value for the given key
-     *
-     * @param {K} key The key of the attribute to get
-     */
-    $get<K extends keyof Schema>(key: K) {
-      return this.$attributes[model.$keyMap[key as string]] as Schema[K]
+    protected $get<K extends keyof schema>(key: K) {
+      return this.$attributes[attributes[key].column] as schema[K]
     }
 
-    /**
-     * Set attribute value for the given key
-     *
-     * @param {K} key The key of the attribute to set
-     * @param {Schema[K]} value The value to set for the attribute
-     */
-    $set<K extends keyof Schema>(key: K, value: Schema[K]) {
-      const _key = model.$keyMap[key as string]
+    protected $set<K extends keyof schema>(key: K, value: schema[K]) {
+      const _key = attributes[key].column
 
       if (key in this.$dirty) {
         if (isEqual(value, this.$dirty[key])) {
@@ -95,7 +82,7 @@ export function model<T extends ModelOptions>(_options: T) {
       this.$attributes[_key] = value
     }
 
-    $takeAttributes(values: Attributes) {
+    $takeAttributes(values: AnyObject) {
       forEach(model.$transforms, (transform, key) => {
         values[key] = transform.take(values[key])
       })
@@ -123,15 +110,15 @@ export function model<T extends ModelOptions>(_options: T) {
     }
   }
 
-  const { $keyMap, $transforms, prototype } = model
+  const { prototype, $transforms, $attributes } = model
 
-  forEach(options, (option, key) => {
-    $keyMap[key] = snakeCase(key)
-
-    if (option.transform) {
-      $transforms[$keyMap[key]] = option.transform
+  forEach(attributes, (option, key) => {
+    if (option.take || option.emit) {
+      $transforms[$attributes[key as keyof schema].column] = {
+        take: option.take ?? identity,
+        emit: option.emit ?? identity,
+      }
     }
-
     return Object.defineProperty(prototype, key, {
       get() {
         return this.$get(key)
@@ -143,15 +130,9 @@ export function model<T extends ModelOptions>(_options: T) {
     })
   })
 
-  return model as ModelClass<typeof schema> & {
-    new (): model & Schema
+  return model as {
+    new (value?: AnyObject): Simplify<model & schema>
   }
-}
-
-function normalize<T extends ModelOptions>(attrs: T) {
-  return mapValues(attrs, (prop) =>
-    prop instanceof ZodSchema ? { type: prop } : prop,
-  ) as NormalizedOptions<T>
 }
 
 export class Issues extends Array<ZodIssue> {

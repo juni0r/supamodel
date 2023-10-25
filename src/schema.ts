@@ -1,4 +1,4 @@
-import { date, custom } from 'zod'
+import { custom } from 'zod'
 import { DateTime } from 'luxon'
 
 export const datetime = () =>
@@ -7,18 +7,12 @@ export const datetime = () =>
   )
 
 export const transform = {
-  date: () => ({
-    type: date(),
-    transform: {
-      take: (iso: string) => new Date(iso),
-      emit: (date: Date) => date?.toISOString(),
-    },
-  }),
-  datetime: () => ({
-    type: datetime(),
-    transform: {
-      take: (iso: string) => DateTime.fromISO(iso, { zone: 'utc' }),
-      emit: (date: DateTime) => date.toUTC().toISO(),
-    },
-  }),
+  date: {
+    take: (iso: string) => new Date(iso),
+    emit: (date: Date) => date?.toISOString(),
+  },
+  datetime: {
+    take: (iso: string) => DateTime.fromISO(iso, { zone: 'utc' }),
+    emit: (date: DateTime) => date.toUTC().toISO(),
+  },
 }

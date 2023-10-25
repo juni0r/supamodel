@@ -1,13 +1,14 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { model, transform } from '../src'
-import { string } from 'zod'
+import { defineModel, attr as $ } from '../src'
+import { datetime, transform } from '../src/schema'
+import { string, date } from 'zod'
 import { DateTime } from 'luxon'
 
-class Subject extends model({
-  givenName: string(),
-  familyName: string(),
-  date: transform.date(),
-  dateTime: transform.datetime(),
+class Subject extends defineModel({
+  givenName: $(string()),
+  familyName: $(string()),
+  date: $(date(), transform.date),
+  dateTime: $(datetime(), transform.datetime),
 }) {
   get name() {
     return `${this.givenName} ${this.familyName}`

@@ -1,14 +1,15 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { model, transform } from '../src'
-import { string, number, boolean } from 'zod'
+import { defineModel, attr as $ } from '../src'
+import { datetime, transform } from '../src/schema'
+import { string, date, number, boolean } from 'zod'
 import { DateTime } from 'luxon'
 
-class Subject extends model({
-  name: string(),
-  position: number(),
-  isOkay: boolean(),
-  date: transform.date(),
-  dateTime: transform.datetime(),
+class Subject extends defineModel({
+  name: $(string()),
+  position: $(number()),
+  isOkay: $(boolean()),
+  date: $(date(), transform.date),
+  dateTime: $(datetime(), transform.datetime),
 }) {}
 
 describe('Model', () => {

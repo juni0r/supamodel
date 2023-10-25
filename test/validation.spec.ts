@@ -1,12 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { model, transform } from '../src'
-import { string } from 'zod'
+import { defineModel, attr as $ } from '../src'
+import { datetime, transform } from '../src/schema'
+import { string, date } from 'zod'
 
-class Subject extends model({
-  givenName: string().trim().min(1),
-  familyName: string().nullable(),
-  date: transform.date(),
-  dateTime: transform.datetime(),
+class Subject extends defineModel({
+  givenName: $(string().trim().min(1)),
+  familyName: $(string().nullable()),
+  date: $(date(), transform.date),
+  dateTime: $(datetime(), transform.datetime),
 }) {}
 
 describe('Validation', () => {
