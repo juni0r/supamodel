@@ -21,23 +21,23 @@ describe('Validation', () => {
     })
   })
 
-  it('has issues', async () => {
-    const issues = await subject.validate()
+  it('has issues', () => {
+    const issues = subject.validate()
     expect(issues.any).toBe(false)
     expect(issues.none).toBe(true)
   })
 
-  it('assigns parsed values', async () => {
+  it('assigns parsed values', () => {
     subject.givenName = ' \t Tom  \n  '
-    const issues = await subject.validate()
+    const issues = subject.validate()
 
     expect(issues.none).toBe(true)
     expect(subject.givenName).toBe('Tom')
   })
 
-  it('creates an issue for a required attribute', async () => {
+  it('creates an issue for a required attribute', () => {
     subject.givenName = ''
-    const issues = await subject.validate()
+    const issues = subject.validate()
 
     expect(issues.any).toBe(true)
     expect(issues.length).toBe(1)
@@ -47,10 +47,10 @@ describe('Validation', () => {
     })
   })
 
-  it('creates an issue for an attribute type mismatch', async () => {
+  it('creates an issue for an attribute type mismatch', () => {
     // @ts-expect-error for intenionally assigning invalid value
     subject.date = '2020-02-02'
-    const issues = await subject.validate()
+    const issues = subject.validate()
 
     expect(issues.any).toBe(true)
     expect(issues.length).toBe(1)

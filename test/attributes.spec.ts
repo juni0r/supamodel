@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { defineModel, attr as $, datetime, transform } from '../src'
+import { defineModel, attr as $, datetime } from '../src'
 import { string, date, number } from 'zod'
 import { DateTime } from 'luxon'
 
@@ -9,8 +9,14 @@ class Subject extends defineModel({
   givenName: $(string()),
   familyName: $(string(), { column: 'last_name' }),
 
-  date: $(date(), transform.date),
-  dateTime: $(datetime(), transform.datetime),
+  date: $(date(), {
+    take: (iso: string) => new Date(iso),
+    emit: (date: Date) => date?.toISOString(),
+  }),
+  dateTime: $(datetime(), {
+    take: (iso: string) => DateTime.fromISO(iso),
+    emit: (date: DateTime) => date.toUTC().toISO(),
+  }),
 }) {
   get name() {
     return `${this.givenName} ${this.familyName}`

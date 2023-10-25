@@ -1,7 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { ZodIssue, ZodSchema } from 'zod'
-import type { Simplify } from 'type-fest'
+import { Implements } from './types'
+import { object, ZodError } from 'zod'
 
+import forEach from 'lodash.foreach'
+import mapValues from 'lodash.mapvalues'
+import snakeCase from 'lodash.snakecase'
+import isEmpty from 'lodash.isempty'
+import isEqual from 'fast-deep-equal'
+
+import type { ZodSchema, ZodIssue } from 'zod'
+import type { Simplify } from 'type-fest'
 import type {
   SchemaFrom,
   ShapeFrom,
@@ -10,15 +18,8 @@ import type {
   Attributes,
   AnyObject,
   Model,
+  AttributeOptions,
 } from './types'
-
-import forEach from 'lodash.foreach'
-import mapValues from 'lodash.mapvalues'
-import snakeCase from 'lodash.snakecase'
-import isEmpty from 'lodash.isempty'
-import isEqual from 'fast-deep-equal'
-
-import { ZodError, object } from 'zod'
 
 export * from './schema'
 
@@ -28,26 +29,29 @@ const identity = (v: any) => v
 
 export const attr = <Z extends ZodSchema>(
   type: Z,
-  options?: Partial<Omit<Attribute<Z>, 'type'>>,
+  options?: AttributeOptions<Z>,
 ) => ({ type, primary: false, column: '', ...options })
 
-export function defineModel<Attrs = Record<string, Attribute>>(
-  attributes: Attributes<Attrs>,
+export function defineModel<A = Record<string, Attribute>>(
+  attributes: Attributes<A>,
 ) {
-  forEach(attributes, (attr, key) => {
-    attr.column ||= snakeCase(key)
-  })
+  const schema = object(mapValues(attributes, 'type') as Shape)
 
-  type schema = SchemaFrom<typeof attributes>
+  type Shape = ShapeFrom<typeof attributes>
+  type Schema = SchemaFrom<typeof attributes>
+  type ModelSchema = Model<typeof attributes, typeof schema>
 
+  @Implements<ModelSchema>()
   class model {
     static $attributes = attributes
+    static $schema = schema
+
     static $transforms: AnyObject<Transform> = {}
-    static $schema = object(mapValues(attributes, 'type') as ShapeFrom<Attrs>)
 
     $attributes: AnyObject = {}
-    $dirty: Partial<schema> = {}
-    $changed = hasKey(this.$dirty) as Record<keyof schema, boolean>
+    $dirty: Partial<Schema> = {}
+
+    $changed = hasKey(this.$dirty) as Record<keyof Schema, boolean>
 
     constructor(value?: AnyObject) {
       if (value) this.$take(value)
@@ -61,11 +65,11 @@ export function defineModel<Attrs = Record<string, Attribute>>(
       return !isEmpty(this.$dirty)
     }
 
-    protected $get<K extends keyof schema>(key: K) {
-      return this.$attributes[attributes[key].column] as schema[K]
+    protected $get<K extends keyof Schema>(key: K) {
+      return this.$attributes[attributes[key].column] as Schema[K]
     }
 
-    protected $set<K extends keyof schema>(key: K, value: schema[K]) {
+    protected $set<K extends keyof Schema>(key: K, value: Schema[K]) {
       const _key = attributes[key].column
 
       if (key in this.$dirty) {
@@ -96,9 +100,13 @@ export function defineModel<Attrs = Record<string, Attribute>>(
       return values
     }
 
-    async validate() {
+    $parse() {
+      return schema.parse(this)
+    }
+
+    validate() {
       try {
-        Object.assign(this, await model.$schema.parseAsync(this))
+        Object.assign(this, this.$parse())
       } catch (error) {
         if (error instanceof ZodError) {
           return Issues.from(error.issues)
@@ -107,18 +115,25 @@ export function defineModel<Attrs = Record<string, Attribute>>(
       }
       return new Issues()
     }
+
+    toJSON() {
+      return mapValues(attributes, (value) => {
+        return this.$attributes[value.column]
+      })
+    }
   }
 
-  const { prototype, $transforms, $attributes } = model
-
   forEach(attributes, (option, key) => {
+    option.column ||= snakeCase(key)
+
     if (option.take || option.emit) {
-      $transforms[$attributes[key as keyof schema].column] = {
+      model.$transforms[attributes[key as keyof Schema].column] = {
         take: option.take ?? identity,
         emit: option.emit ?? identity,
       }
     }
-    return Object.defineProperty(prototype, key, {
+
+    return Object.defineProperty(model.prototype, key, {
       get() {
         return this.$get(key)
       },
@@ -128,8 +143,8 @@ export function defineModel<Attrs = Record<string, Attribute>>(
     })
   })
 
-  return model as Model<typeof attributes> & {
-    new (value?: AnyObject): Simplify<model & schema>
+  return model as ModelSchema & {
+    new (...args: any[]): Simplify<model & Schema>
   }
 }
 

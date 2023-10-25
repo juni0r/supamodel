@@ -75,4 +75,17 @@ describe('Model', () => {
     expect(subject.$isDirty).toBe(false)
     expect(subject.$changed.isOkay).toBe(false)
   })
+
+  it('works with assign', () => {
+    Object.assign(subject, {
+      name: 'Steffi',
+      date: new Date(2000, 0, 1),
+    })
+
+    expect(subject.$changed.name).toBe(true)
+    expect(subject.$changed.date).toBe(true)
+
+    expect(subject.name).toBe('Steffi')
+    expect(subject.date).toEqual(new Date(2000, 0, 1))
+  })
 })

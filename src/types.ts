@@ -1,5 +1,6 @@
+import { ZodObject } from 'zod'
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { TypeOf, ZodObject, ZodSchema } from 'zod'
+import type { AnyZodObject, TypeOf, ZodSchema } from 'zod'
 
 export function Implements<T>() {
   return <U extends T>(constructor: U) => {
@@ -11,9 +12,12 @@ export interface AnyObject<T = unknown> {
   [key: string]: T
 }
 
-export interface Model<A extends Attributes> {
+export interface Model<
+  A extends Record<string, Attribute>,
+  S extends AnyZodObject = ZodObject<SchemaFrom<A>>,
+> {
   $attributes: A
-  $schema: ZodObject<ShapeFrom<A>>
+  $schema: S
   $transforms: AnyObject<Transform>
 }
 
@@ -25,7 +29,11 @@ export interface Attribute<Z extends ZodSchema = ZodSchema> {
   emit?: (value: TypeOf<Z>) => any
 }
 
-export type Attributes<T = Record<string, Attribute>> = {
+export type AttributeOptions<Z extends ZodSchema> = Partial<
+  Omit<Attribute<Z>, 'type'>
+>
+
+export type Attributes<T> = {
   [k in keyof T]: T[k] extends Attribute<any> ? T[k] : never
 }
 
