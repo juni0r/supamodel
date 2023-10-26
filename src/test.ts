@@ -1,18 +1,20 @@
+import 'dotenv/config'
+
 import { Database } from '../supabase/types'
-import {
-  defineModel,
-  attr as $,
-  transform,
-  datetime,
-  defineModelConfig,
-} from './model'
 import { string, number, object, boolean } from 'zod'
 
-defineModelConfig<Database>({
-  supabaseUrl: 'http://localhost:54321',
-  supabaseKey:
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0',
-})
+import {
+  createClient,
+  defineModelConfig,
+  defineModel,
+  transform,
+  datetime,
+  attr as $,
+} from './model'
+
+const { SUPABASE_URL, SUPABASE_ANON_KEY } = process.env
+
+defineModelConfig(createClient<Database>(SUPABASE_URL!, SUPABASE_ANON_KEY!))
 
 class Record extends defineModel({
   id: $(number(), { primary: true }),
@@ -29,4 +31,4 @@ class Record extends defineModel({
 const record = new Record({})
 
 console.log(record.createdAt)
-console.log(Record.$tableName)
+// console.log(Record.$tableName)

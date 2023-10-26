@@ -1,8 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { SupabaseClient } from '@supabase/supabase-js'
-
-import { ZodObject } from 'zod'
-import type { TypeOf, ZodSchema } from 'zod'
+import { ZodObject, type ZodSchema, type TypeOf } from 'zod'
 
 export function Implements<T>() {
   return <U extends T>(constructor: U) => {
@@ -24,23 +22,23 @@ export interface Model<
   $get<K extends keyof Schema>(key: K): Schema[K]
   $set<K extends keyof Schema>(key: K, value: Schema[K]): void
   update<C extends this>(this: C): Promise<any>
+  toJSON(): ToJSON
 }
 
 export interface ModelClass<
   Attrs extends Record<string, Attribute>,
   Schema = SchemaFrom<Attrs>,
-  Instance = Model<Attrs, Schema>,
 > {
-  new (...args: any[]): Instance
+  new (...args: any[]): Model<Attrs, Schema>
 
   client: SupabaseClient
   attributes: Attrs
-  schema: ZodObject<ShapeFrom<Attrs>>
+  schema: ZodObject<ShapeFrom<Attrs>, 'strip'>
   transforms: AnyObject<Transform>
   primaryKey: string
   tableName: string
 
-  find<C extends this>(this: C, id: string | number): Promise<Instance>
+  find(id: string | number): Promise<InstanceType<this>>
 }
 
 export interface Attribute<Z extends ZodSchema = ZodSchema> {
@@ -70,4 +68,16 @@ export type ShapeFrom<T> = {
 export interface Transform {
   take: (v: any) => any
   emit: (v: any) => any
+}
+
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export interface ToJSON {
+  [key: string]: Json | undefined
 }

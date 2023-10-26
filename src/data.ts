@@ -5,29 +5,31 @@ import { Database } from '../supabase/types'
 import {
   defineModel,
   defineModelConfig,
-  attr as $,
+  attr as attr_,
   transform,
   datetime,
   createClient,
 } from './model'
 import { string, number, object, boolean } from 'zod'
 
-const { env, argv } = process
+const {
+  env: { SUPABASE_URL, SUPABASE_ANON_KEY },
+  argv,
+} = process
 
-const client = createClient<Database>(env.SUPABASE_URL!, env.SUPABASE_ANON_KEY!)
+defineModelConfig(createClient<Database>(SUPABASE_URL!, SUPABASE_ANON_KEY!))
 
-defineModelConfig(client)
-
+// prettier-ignore
 class Record extends defineModel({
-  id: $(number(), { primary: true }),
-  firstName: $(string(), { column: 'given_name' }),
-  lastName: $(string(), { column: 'family_name' }),
-  email: $(string().email()),
-  birthday: $(string(), { column: 'date_of_birth' }),
-  score: $(number()),
-  data: $(object({}).passthrough()),
-  isOkay: $(boolean()),
-  createdAt: $(datetime(), transform.datetime),
+  id:         attr_(number(), { primary: true }),
+  firstName:  attr_(string(), { column: 'given_name' }),
+  lastName:   attr_(string(), { column: 'family_name' }),
+  email:      attr_(string().email()),
+  birthday:   attr_(string(), { column: 'date_of_birth' }),
+  score:      attr_(number()),
+  data:       attr_(object({}).passthrough()),
+  isOkay:     attr_(boolean()),
+  createdAt:  attr_(datetime(), transform.datetime),
 }) {
   get name() {
     return `${this.firstName} ${this.lastName}`

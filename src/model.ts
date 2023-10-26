@@ -2,7 +2,7 @@
 /* eslint-disable prefer-const */
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-// import { Implements } from './types'
+import { Implements } from './types'
 import { object, ZodError } from 'zod'
 
 import forEach from 'lodash.foreach'
@@ -23,6 +23,7 @@ import type {
   ModelClass,
   AttributeOptions,
   Model,
+  Json,
 } from './types'
 import pick from 'lodash.pick'
 
@@ -72,7 +73,7 @@ export function defineModel<A = Record<string, Attribute>>(
   type Schema = SchemaFrom<Attrs>
   type ModelSchema = ModelClass<Attrs>
 
-  let { client, tableName, naming } = {
+  let { naming, client, tableName } = {
     naming: underscore,
     ...modelOptions,
     ...options,
@@ -80,7 +81,7 @@ export function defineModel<A = Record<string, Attribute>>(
 
   const schema = object(mapValues(attributes, 'type') as ShapeFrom<Attrs>)
 
-  // @Implements<ModelSchema>()
+  @Implements<ModelSchema>()
   class model implements Model<Attrs> {
     static client = client
     static schema = schema
@@ -106,7 +107,7 @@ export function defineModel<A = Record<string, Attribute>>(
       return model
     }
 
-    static async find(this: typeof model, id: string | number) {
+    static async find(id: string | number) {
       const { data, error } = await this.client
         .from(this.tableName)
         .select('*')
@@ -140,7 +141,7 @@ export function defineModel<A = Record<string, Attribute>>(
       } else {
         const current = this.$attributes[column]
         if (!isEqual(value, current)) {
-          this.$dirty[key] = current as typeof value
+          this.$dirty[key] = current
         }
       }
       this.$attributes[column] = value
@@ -191,7 +192,7 @@ export function defineModel<A = Record<string, Attribute>>(
 
     toJSON() {
       return mapValues(attributes, (value) => {
-        return this.$attributes[value.column]
+        return this.$attributes[value.column] as Json
       })
     }
   }
