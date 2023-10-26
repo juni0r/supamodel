@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { defineModel, attr as $, datetime, DateTime } from '../src'
+import { defineModel, attr as $, datetime, DateTime } from '../src/model'
 import { string, date, number } from 'zod'
 
 class Subject extends defineModel({
@@ -23,7 +23,7 @@ class Subject extends defineModel({
 }
 
 describe('Attributes', () => {
-  let subject: InstanceType<typeof Subject>
+  let subject: Subject
 
   beforeEach(() => {
     subject = new Subject({
@@ -65,10 +65,10 @@ describe('Attributes', () => {
 
 describe('Static attributes', () => {
   it('maps attribute keys to column keys', () => {
-    expect(Subject.$attributes.familyName.column).toBe('last_name')
+    expect(Subject.attributes.familyName.column).toBe('last_name')
   })
 
   it('maps attribute keys to schemas', () => {
-    expect(Subject.$schema.shape.familyName._def.typeName).toBe('ZodString')
+    expect(Subject.schema.shape.familyName._def.typeName).toBe('ZodString')
   })
 })

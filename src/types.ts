@@ -1,6 +1,8 @@
-import { ZodObject } from 'zod'
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { AnyZodObject, TypeOf, ZodSchema } from 'zod'
+import { SupabaseClient } from '@supabase/supabase-js'
+
+import { ZodObject } from 'zod'
+import type { TypeOf, ZodSchema } from 'zod'
 
 export function Implements<T>() {
   return <U extends T>(constructor: U) => {
@@ -13,12 +15,32 @@ export interface AnyObject<T = unknown> {
 }
 
 export interface Model<
-  A extends Record<string, Attribute>,
-  S extends AnyZodObject = ZodObject<SchemaFrom<A>>,
+  Attrs extends Record<string, Attribute>,
+  Schema = SchemaFrom<Attrs>,
 > {
-  $attributes: A
-  $schema: S
-  $transforms: AnyObject<Transform>
+  $attributes: AnyObject
+  $dirty: Partial<Schema>
+  $changed: Record<keyof Schema, boolean>
+  $get<K extends keyof Schema>(key: K): Schema[K]
+  $set<K extends keyof Schema>(key: K, value: Schema[K]): void
+  update<C extends this>(this: C): Promise<any>
+}
+
+export interface ModelClass<
+  Attrs extends Record<string, Attribute>,
+  Schema = SchemaFrom<Attrs>,
+  Instance = Model<Attrs, Schema>,
+> {
+  new (...args: any[]): Instance
+
+  client: SupabaseClient
+  attributes: Attrs
+  schema: ZodObject<ShapeFrom<Attrs>>
+  transforms: AnyObject<Transform>
+  primaryKey: string
+  tableName: string
+
+  find<C extends this>(this: C, id: string | number): Promise<Instance>
 }
 
 export interface Attribute<Z extends ZodSchema = ZodSchema> {

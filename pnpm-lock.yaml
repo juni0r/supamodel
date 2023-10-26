@@ -8,9 +8,18 @@ dependencies:
   '@supabase/supabase-js':
     specifier: ^2.38.3
     version: 2.38.3
+  dotenv:
+    specifier: ^16.3.1
+    version: 16.3.1
   fast-deep-equal:
     specifier: ^3.1.3
     version: 3.1.3
+  inflection:
+    specifier: ^3.0.0
+    version: 3.0.0
+  lodash.defaultsdeep:
+    specifier: ^4.6.1
+    version: 4.6.1
   lodash.foreach:
     specifier: ^4.5.0
     version: 4.5.0
@@ -34,6 +43,12 @@ dependencies:
     version: 3.22.4
 
 devDependencies:
+  '@types/inflection':
+    specifier: ^1.13.1
+    version: 1.13.1
+  '@types/lodash.defaultsdeep':
+    specifier: ^4.6.8
+    version: 4.6.8
   '@types/lodash.foreach':
     specifier: ^4.5.8
     version: 4.5.8
@@ -543,12 +558,22 @@ packages:
     resolution: {integrity: sha512-69TtiDzu0bcmKQv3yg1Zx409/Kd7r0b5F1PfpYJfSHzLGtB53547V4u+9iqKYsTu/O2ai6KTb0TInNpvuQ3qmg==}
     dev: true
 
+  /@types/inflection@1.13.1:
+    resolution: {integrity: sha512-iTQQWQk4oJ1BygX0ggBKOudHJHL4DmF+4vRZMU3ddHc6Cl/Mk6oo7HXnx4pn8wSY96DZolRMOvNUBuhAAwm18A==}
+    dev: true
+
   /@types/istanbul-lib-coverage@2.0.5:
     resolution: {integrity: sha512-zONci81DZYCZjiLe0r6equvZut0b+dBRPBN5kBDjsONnutYNtJMoWQ9uR2RkL1gLG9NMTzvf+29e5RFfPbeKhQ==}
     dev: true
 
   /@types/json-schema@7.0.14:
     resolution: {integrity: sha512-U3PUjAudAdJBeC2pgN8uTIKgxrb4nlDF3SF0++EldXQvQBGkpFZMSnwQiIoDU77tv45VgNkl/L4ouD+rEomujw==}
+    dev: true
+
+  /@types/lodash.defaultsdeep@4.6.8:
+    resolution: {integrity: sha512-KmZGHVBLcdOISWI1smMnCwP3KSL6oF6AjJwoTL2c/pF2+wDCtVZkmTCbYgK+m1wvkqN+sxl06rZuIuE8k1fuKQ==}
+    dependencies:
+      '@types/lodash': 4.14.200
     dev: true
 
   /@types/lodash.foreach@4.5.8:
@@ -1070,6 +1095,11 @@ packages:
       esutils: 2.0.3
     dev: true
 
+  /dotenv@16.3.1:
+    resolution: {integrity: sha512-IPzF4w4/Rd94bA9imS68tZBaYyBWSCE47V1RGuMrB94iyTOIEwRmVL2x/4An+6mETpLrKJ5hQkB8W4kFAadeIQ==}
+    engines: {node: '>=12'}
+    dev: false
+
   /es5-ext@0.10.62:
     resolution: {integrity: sha512-BHLqn0klhEpnOKSrzn/Xsz2UIW8j+cGmo9JLzr8BiUapV8hPL9+FliFqjwr9ngW7jWdnxv6eO+/LqyhJVqgrjA==}
     engines: {node: '>=0.10'}
@@ -1468,6 +1498,11 @@ packages:
     engines: {node: '>=0.8.19'}
     dev: true
 
+  /inflection@3.0.0:
+    resolution: {integrity: sha512-1zEJU1l19SgJlmwqsEyFTbScw/tkMHFenUo//Y0i+XEP83gDFdMvPizAD/WGcE+l1ku12PcTVHQhO6g5E0UCMw==}
+    engines: {node: '>=18.0.0'}
+    dev: false
+
   /inflight@1.0.6:
     resolution: {integrity: sha512-k92I/b08q4wvFscXCLvqfsHCrjrF7yiXsQuIVvVE7N82W3+aqpzuUdBbfhWcy/FZR3/4IgflMgKLOsvPDrGCJA==}
     dependencies:
@@ -1633,6 +1668,10 @@ packages:
     dependencies:
       p-locate: 5.0.0
     dev: true
+
+  /lodash.defaultsdeep@4.6.1:
+    resolution: {integrity: sha512-3j8wdDzYuWO3lM3Reg03MuQR957t287Rpcxp1njpEa8oDrikb+FwGdW3n+FELh/A6qib6yPit0j/pv9G/yeAqA==}
+    dev: false
 
   /lodash.foreach@4.5.0:
     resolution: {integrity: sha512-aEXTF4d+m05rVOAUG3z4vZZ4xVexLKZGF0lIxuHZ1Hplpk/3B6Z1+/ICICYRLm7c41Z2xiejbkCkJoTlypoXhQ==}
