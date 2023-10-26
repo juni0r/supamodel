@@ -2,6 +2,8 @@ import { custom } from 'zod'
 import { DateTime } from 'luxon'
 import util, { type CustomInspectFunction } from 'node:util'
 
+export { DateTime }
+
 export const datetime = () =>
   custom<DateTime>((val: unknown) =>
     val instanceof DateTime ? val.isValid : false,

@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { defineModel, attr as $, datetime } from '../src'
+import { defineModel, attr as $, datetime, DateTime } from '../src'
 import { string, date, number } from 'zod'
-import { DateTime } from 'luxon'
 
 class Subject extends defineModel({
   id: $(number(), { primary: true }),
