@@ -21,11 +21,6 @@ export interface ModelConfig {
   naming?: (key: string) => string
 }
 
-export interface ValidationIssues extends Array<ZodIssue> {
-  any: boolean
-  none: boolean
-}
-
 export interface Model<
   Attrs extends Record<string, Attribute>,
   Schema = SchemaFrom<Attrs>,
@@ -36,6 +31,7 @@ export interface Model<
   $dirty: Partial<Schema>
   $isDirty: boolean
   $changed: Record<keyof Schema, boolean>
+  $isPersisted: boolean
 
   $get<K extends keyof Schema>(key: K): Schema[K]
   $set<K extends keyof Schema>(key: K, value: Schema[K]): void
@@ -44,7 +40,7 @@ export interface Model<
   $parse(): Schema
   $commit(): void
   validate(): ValidationIssues
-  update<C extends this>(this: C): Promise<any>
+  save<C extends this>(this: C): Promise<any>
   toJSON(): ToJSON
 }
 
@@ -88,6 +84,11 @@ export type ShapeFrom<T> = {
 export interface Transform {
   take: (v: any) => any
   emit: (v: any) => any
+}
+
+export interface ValidationIssues extends Array<ZodIssue> {
+  any: boolean
+  none: boolean
 }
 
 export type Json =

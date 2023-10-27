@@ -52,7 +52,7 @@ Record.find(+argv[2]).then(async (record) => {
   }
 
   return record
-    .update()
+    .save()
     .then((issues) => {
       if (issues.any) {
         console.warn('🖐️ ', issues)

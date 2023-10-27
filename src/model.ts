@@ -1,7 +1,9 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import type { Simplify } from 'type-fest'
 
-import { Implements } from './types'
-import { object, ZodError } from 'zod'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+export { createClient, type SupabaseClient }
+
+import { object, ZodError, type ZodSchema, type ZodIssue } from 'zod'
 
 import forEach from 'lodash.foreach'
 import mapValues from 'lodash.mapvalues'
@@ -10,8 +12,7 @@ import isEqual from 'fast-deep-equal'
 
 import { underscore, pluralize } from 'inflection'
 
-import type { ZodSchema, ZodIssue } from 'zod'
-import type { Simplify } from 'type-fest'
+import { Implements } from './types'
 import type {
   Model,
   ModelClass,
@@ -29,7 +30,6 @@ import type {
 } from './types'
 
 export * from './schema'
-export { createClient, type SupabaseClient }
 
 const {
   assign,
@@ -91,10 +91,7 @@ export function defineModel<A = Record<string, Attribute>>(
 
     $attributes = Empty<AnyObject>()
     $dirty = Empty<Partial<Schema>>()
-
-    $changed = new Proxy(this, {
-      get: (target, key) => hasOwnKey(target.$dirty, key),
-    }) as Record<keyof Attrs, boolean>
+    $changed = hasKeyProxy(this.$dirty)
 
     constructor(value?: AnyObject) {
       if (value) this.$take(value)
@@ -108,8 +105,13 @@ export function defineModel<A = Record<string, Attribute>>(
       return !isEmpty(this.$dirty)
     }
 
+    get $isPersisted() {
+      return this[model.primaryKey as keyof this] !== undefined
+    }
+
     $commit() {
       this.$dirty = Empty()
+      this.$changed = hasKeyProxy(this.$dirty)
     }
 
     $get<K extends keyof Schema>(key: K) {
@@ -174,19 +176,21 @@ export function defineModel<A = Record<string, Attribute>>(
       return new Issues()
     }
 
-    async update() {
+    async save() {
       const issues = this.validate()
       if (issues.any || !this.$isDirty) return issues
 
-      const id = this[model.primaryKey as keyof this]
+      const { tableName, primaryKey } = model
+
+      const id = this[primaryKey as keyof this]
       const data = this.$emit(...keysOf(this.$dirty))
 
-      const { data: updates, error } = await client
-        .from(model.tableName)
-        .update(data)
-        .eq(model.primaryKey, id)
-        .select()
-        .single()
+      const record =
+        id === undefined
+          ? client.from(tableName).insert(data)
+          : client.from(tableName).update(data).eq(primaryKey, id)
+
+      const { data: updates, error } = await record.select().single()
 
       if (error) throw error
 
@@ -252,4 +256,10 @@ export class Issues extends Array<ZodIssue> implements ValidationIssues {
   get none() {
     return this.length === 0
   }
+}
+
+function hasKeyProxy<T extends object>(object: T) {
+  return new Proxy(object, {
+    get: (target, key) => hasOwnKey(target, key),
+  }) as Record<keyof T, boolean>
 }
