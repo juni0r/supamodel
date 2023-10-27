@@ -38,6 +38,12 @@ class Record extends defineModel({
   }
 }
 
+Record.findAll((select) => select.eq('given_name', 'Stella'))
+  .then((records) => {
+    console.log(records.map((record) => record.toJSON()))
+  })
+  .catch(console.error)
+
 Record.find(+argv[2]).then(async (record) => {
   console.log(record)
 

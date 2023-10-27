@@ -36,6 +36,7 @@ describe('Attributes', () => {
   })
 
   it('can be read', () => {
+    expect(subject.$id).toBe(123)
     expect(subject.id).toBe(123)
     expect(subject.givenName).toBe('Stella')
     expect(subject.familyName).toBe('Goldbacke')

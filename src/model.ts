@@ -27,6 +27,7 @@ import type {
   ValidationIssues,
   AnyObject,
   Json,
+  FilterBuilder,
 } from './types'
 
 export * from './schema'
@@ -85,12 +86,12 @@ export function defineModel<A = Record<string, Attribute>>(
     static transforms = Empty<AnyObject<Transform>>()
     static get tableName() {
       const value = tableName ?? pluralize(naming(this.name))
-      defineProperty(model, 'tableName', { value })
+      defineProperty(this, 'tableName', { value })
       return value
     }
 
-    get $id(): string | number {
-      return this[model.primaryKey as Schema[typeof model.primaryKey]]
+    get $id() {
+      return this[model.primaryKey as keyof this] as string | number
     }
 
     $attributes = Empty<AnyObject>()
@@ -102,7 +103,7 @@ export function defineModel<A = Record<string, Attribute>>(
     }
 
     get $model() {
-      return model
+      return this.constructor as ModelClass<Attrs>
     }
 
     get $isDirty() {
@@ -110,7 +111,7 @@ export function defineModel<A = Record<string, Attribute>>(
     }
 
     get $isPersisted() {
-      return this[model.primaryKey as keyof this] !== undefined
+      return this[this.$model.primaryKey as keyof this] !== undefined
     }
 
     $commit() {
@@ -139,31 +140,12 @@ export function defineModel<A = Record<string, Attribute>>(
     }
 
     $take(values: AnyObject) {
-      forEach(model.transforms, (transform, key) => {
-        values[key] = transform.take(values[key])
-      })
-      this.$attributes = values
+      this.$attributes = this.$model.transformFor('take', values)
       this.$commit()
     }
 
     $emit<K extends keyof Schema>(...keys: K[]) {
-      const { attributes, transforms, schema } = model
-      const { $attributes } = this
-
-      if (isEmpty(keys)) {
-        keys = keysOf(schema.shape) as K[]
-      }
-
-      return keys.reduce((emit, _key) => {
-        const key = attributes[_key].column
-
-        return {
-          ...emit,
-          [key]: hasOwnKey(transforms, key)
-            ? transforms[key].emit($attributes[key])
-            : $attributes[key],
-        }
-      }, {} as AnyObject)
+      return this.$model.transformFor('emit', this.$attributes, keys)
     }
 
     $parse() {
@@ -179,27 +161,24 @@ export function defineModel<A = Record<string, Attribute>>(
         }
         throw error
       }
-      return new Issues()
+      return Issues.none()
     }
 
     async save() {
+      if (!this.$isDirty) return Issues.none()
+
       const issues = this.validate()
-      if (issues.any || !this.$isDirty) return issues
+      if (issues.any) return issues
 
-      const { tableName, primaryKey } = model
-
-      const { $id } = this
       const record = this.$emit(...keysOf(this.$dirty))
 
-      const write =
-        $id === undefined
-          ? client.from(tableName).insert(record)
-          : client
-              .from(tableName)
-              .update(record)
-              .eq(primaryKey as string, $id)
+      const { error, data } = await (this.$id === undefined
+        ? this.$model.insert(record)
+        : this.$model.update(this.$id, record)
+      )
+        .select()
+        .single()
 
-      const { data, error } = await write.select().single()
       if (error) throw error
 
       this.$take(data)
@@ -212,10 +191,24 @@ export function defineModel<A = Record<string, Attribute>>(
       })
     }
 
+    static select(columns?: string) {
+      return this.client.from(this.tableName).select(columns)
+    }
+
+    static async findAll(scoped?: (scope: FilterBuilder) => FilterBuilder) {
+      let select = this.client.from(this.tableName).select()
+      if (scoped) select = scoped(select)
+
+      const { error, data } = await select
+      if (error) throw error
+
+      return data.map((record) => new this(record))
+    }
+
     static async find(id: string | number) {
       const { data, error } = await this.client
         .from(this.tableName)
-        .select('*')
+        .select()
         .eq(this.primaryKey as string, id)
         .single()
 
@@ -223,6 +216,45 @@ export function defineModel<A = Record<string, Attribute>>(
       if (!data) throw new Error(`Record not found (id: ${id})`)
 
       return new this(data)
+    }
+
+    static insert(record: AnyObject) {
+      return this.client.from(this.tableName).insert(record)
+    }
+
+    static update(id: string | number, record: AnyObject) {
+      return this.client
+        .from(this.tableName)
+        .update(record)
+        .eq(this.primaryKey as string, id)
+    }
+
+    static transformFor(
+      mode: 'take' | 'emit',
+      values: AnyObject,
+      keys?: (keyof Attrs)[],
+    ) {
+      const { attributes, transforms } = this
+
+      if (isEmpty(keys)) {
+        keys = keysOf(schema.shape)
+      }
+
+      return keys!.reduce((transformed, _key) => {
+        const key = attributes[_key].column
+        const value = values[key]
+
+        if (value === undefined) {
+          return transformed
+        }
+
+        return {
+          ...transformed,
+          [key]: hasOwnKey(transforms, key)
+            ? transforms[key][mode](value)
+            : value,
+        }
+      }, {} as AnyObject)
     }
   }
 
@@ -256,6 +288,9 @@ export function defineModel<A = Record<string, Attribute>>(
 export class Issues extends Array<ZodIssue> implements ValidationIssues {
   static from(issues: ZodIssue[]) {
     return setPrototypeOf(issues, this.prototype) as Issues
+  }
+  static none() {
+    return this.from([])
   }
   get any() {
     return this.length > 0

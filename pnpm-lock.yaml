@@ -5,6 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
+  '@supabase/postgrest-js':
+    specifier: ^1.8.5
+    version: 1.8.5
   '@supabase/supabase-js':
     specifier: ^2.38.3
     version: 2.38.3

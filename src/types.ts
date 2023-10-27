@@ -1,4 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import type { PostgrestFilterBuilder } from '@supabase/postgrest-js'
+import type { GenericSchema } from '@supabase/supabase-js/dist/module/lib/types'
+
 import { SupabaseClient } from '@supabase/supabase-js'
 import { ZodObject, type ZodSchema, type TypeOf, type ZodIssue } from 'zod'
 
@@ -32,6 +35,16 @@ export interface ModelClass<Attrs extends Record<string, Attribute>> {
   tableName: string
 
   find(id: string | number): Promise<InstanceType<this>>
+  findAll(
+    scoped?: (scope: FilterBuilder) => FilterBuilder,
+  ): Promise<InstanceType<this>[]>
+  insert(record: AnyObject): any
+  update(id: string | number, record: AnyObject): any
+  transformFor(
+    mode: 'take' | 'emit',
+    values: AnyObject,
+    keys?: (keyof Attrs)[],
+  ): any
 }
 
 export interface Model<
@@ -70,7 +83,7 @@ export type AttributeOptions<Z extends ZodSchema> = Partial<
   Omit<Attribute<Z>, 'type'>
 >
 
-export type Attributes<T> = {
+export type Attributes<T = any> = {
   [k in keyof T]: T[k] extends Attribute<any> ? T[k] : never
 }
 
@@ -91,6 +104,13 @@ export interface ValidationIssues extends Array<ZodIssue> {
   any: boolean
   none: boolean
 }
+
+export interface FilterBuilder<
+  Schema extends GenericSchema = any,
+  Row extends Record<string, unknown> = any,
+  Result = any[],
+  Relationships = unknown,
+> extends PostgrestFilterBuilder<Schema, Row, Result, Relationships> {}
 
 export type Json =
   | string
