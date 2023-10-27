@@ -26,7 +26,7 @@ export interface ModelClass<Attrs extends Record<string, Attribute>> {
 
   client: SupabaseClient
   attributes: Attrs
-  schema: ZodObject<ShapeFrom<Attrs>, 'strip'>
+  schema: ZodObject<ShapeFrom<Attrs>>
   transforms: AnyObject<Transform>
   primaryKey: keyof Attrs
   tableName: string
