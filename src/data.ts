@@ -18,7 +18,9 @@ const {
   argv,
 } = process
 
-defineModelConfig(createClient<Database>(SUPABASE_URL!, SUPABASE_ANON_KEY!))
+defineModelConfig({
+  client: createClient<Database>(SUPABASE_URL!, SUPABASE_ANON_KEY!),
+})
 
 class Record extends defineModel({
   id: $(number(), { primary: true }),

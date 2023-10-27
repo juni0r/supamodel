@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable prefer-const */
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
 import { Implements } from './types'
@@ -15,17 +13,18 @@ import { underscore, pluralize } from 'inflection'
 import type { ZodSchema, ZodIssue } from 'zod'
 import type { Simplify } from 'type-fest'
 import type {
-  Attribute,
-  Attributes,
-  AttributeOptions,
-  AnyObject,
+  Model,
   ModelClass,
   ModelConfig,
   ModelOptions,
   SchemaFrom,
   ShapeFrom,
   Transform,
-  Model,
+  Attribute,
+  Attributes,
+  AttributeOptions,
+  ValidationIssues,
+  AnyObject,
   Json,
 } from './types'
 
@@ -39,7 +38,7 @@ const {
   prototype: { hasOwnProperty },
 } = Object
 
-const identity = (v: any) => v
+const identity = (v: unknown) => v
 const snakeCase = (key: string) => underscore(key)
 const Empty = <T = object>() => Object.create(null) as T
 const hasOwnKey = (object: object, key: symbol | string | number) =>
@@ -53,11 +52,8 @@ const modelOptions = Empty<
   } & ModelConfig
 >()
 
-export function defineModelConfig<Db = any>(
-  client: SupabaseClient<Db>,
-  options?: ModelConfig,
-) {
-  assign(modelOptions, { client }, options)
+export function defineModelConfig(options: typeof modelOptions) {
+  assign(modelOptions, options)
 }
 
 export const attr = <Z extends ZodSchema>(
@@ -242,11 +238,11 @@ export function defineModel<A = Record<string, Attribute>>(
   })
 
   return model as ModelClass<Attrs> & {
-    new (...args: any[]): Simplify<model & Schema>
+    new (...args: unknown[]): Simplify<model & Schema>
   }
 }
 
-export class Issues extends Array<ZodIssue> {
+export class Issues extends Array<ZodIssue> implements ValidationIssues {
   static from(issues: ZodIssue[]) {
     return setPrototypeOf(issues, this.prototype) as Issues
   }

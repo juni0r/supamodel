@@ -30,7 +30,7 @@ export interface Model<
   Attrs extends Record<string, Attribute>,
   Schema = SchemaFrom<Attrs>,
 > {
-  $model: ModelClass<Attrs, Schema>
+  $model: ModelClass<Attrs>
 
   $attributes: AnyObject
   $dirty: Partial<Schema>
@@ -48,11 +48,8 @@ export interface Model<
   toJSON(): ToJSON
 }
 
-export interface ModelClass<
-  Attrs extends Record<string, Attribute>,
-  Schema = SchemaFrom<Attrs>,
-> {
-  new (...args: any[]): Model<Attrs, Schema>
+export interface ModelClass<Attrs extends Record<string, Attribute>> {
+  new (...args: any[]): Model<Attrs>
 
   client: SupabaseClient
   attributes: Attrs

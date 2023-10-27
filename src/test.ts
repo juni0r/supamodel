@@ -9,23 +9,25 @@ import {
   defineModel,
   transform,
   datetime,
-  attr as $,
+  attr,
 } from './model'
 
 const { SUPABASE_URL, SUPABASE_ANON_KEY } = process.env
 
-defineModelConfig(createClient<Database>(SUPABASE_URL!, SUPABASE_ANON_KEY!))
+defineModelConfig({
+  client: createClient<Database>(SUPABASE_URL!, SUPABASE_ANON_KEY!),
+})
 
 class Record extends defineModel({
-  id: $(number(), { primary: true }),
-  firstName: $(string(), { column: 'given_name' }),
-  lastName: $(string(), { column: 'family_name' }),
-  email: $(string().email()),
-  birthday: $(string(), { column: 'date_of_birth' }),
-  score: $(number()),
-  data: $(object({}).passthrough()),
-  isOkay: $(boolean()),
-  createdAt: $(datetime(), transform.datetime),
+  id: attr(number(), { primary: true }),
+  firstName: attr(string(), { column: 'given_name' }),
+  lastName: attr(string(), { column: 'family_name' }),
+  email: attr(string().email()),
+  birthday: attr(string(), { column: 'date_of_birth' }),
+  score: attr(number()),
+  data: attr(object({}).passthrough()),
+  isOkay: attr(boolean()),
+  createdAt: attr(datetime(), transform.datetime),
 }) {}
 
 const record = new Record({
@@ -43,4 +45,4 @@ const record = new Record({
 const emit = record.$emit()
 console.log(emit)
 console.log(record.toJSON())
-// console.log(Record.$tableName)
+console.log(Record.tableName)
