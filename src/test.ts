@@ -18,8 +18,8 @@ defineModelConfig(createClient<Database>(SUPABASE_URL!, SUPABASE_ANON_KEY!))
 
 class Record extends defineModel({
   id: $(number(), { primary: true }),
-  givenName: $(string()),
-  familyName: $(string()),
+  firstName: $(string(), { column: 'given_name' }),
+  lastName: $(string(), { column: 'family_name' }),
   email: $(string().email()),
   birthday: $(string(), { column: 'date_of_birth' }),
   score: $(number()),
@@ -28,7 +28,19 @@ class Record extends defineModel({
   createdAt: $(datetime(), transform.datetime),
 }) {}
 
-const record = new Record({})
+const record = new Record({
+  id: 5,
+  given_name: 'Stella',
+  family_name: 'Silberlocke',
+  email: 'stella@mail.com',
+  date_of_birth: '1974-12-18',
+  score: 4395627846735478300,
+  data: { mehr: 'info', neue: 'sichtweisen' },
+  is_okay: false,
+  created_at: '2023-10-25T00:29:24.748Z',
+})
 
-console.log(record.createdAt)
+const emit = record.$emit()
+console.log(emit)
+console.log(record.toJSON())
 // console.log(Record.$tableName)

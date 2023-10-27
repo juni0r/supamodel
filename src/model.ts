@@ -9,23 +9,25 @@ import forEach from 'lodash.foreach'
 import mapValues from 'lodash.mapvalues'
 import isEmpty from 'lodash.isempty'
 import isEqual from 'fast-deep-equal'
+
 import { underscore, pluralize } from 'inflection'
 
 import type { ZodSchema, ZodIssue } from 'zod'
 import type { Simplify } from 'type-fest'
 import type {
-  SchemaFrom,
-  ShapeFrom,
   Attribute,
-  Transform,
   Attributes,
+  AttributeOptions,
   AnyObject,
   ModelClass,
-  AttributeOptions,
+  ModelConfig,
+  ModelOptions,
+  SchemaFrom,
+  ShapeFrom,
+  Transform,
   Model,
   Json,
 } from './types'
-import pick from 'lodash.pick'
 
 export * from './schema'
 export { createClient, type SupabaseClient }
@@ -34,24 +36,22 @@ const {
   assign,
   defineProperty,
   setPrototypeOf,
-  // keys: keysOf,
   prototype: { hasOwnProperty },
 } = Object
 
 const identity = (v: any) => v
+const snakeCase = (key: string) => underscore(key)
+const Empty = <T = object>() => Object.create(null) as T
+const hasOwnKey = (object: object, key: symbol | string | number) =>
+  hasOwnProperty.call(object, key)
+const keysOf = <T extends object>(object: T) =>
+  Object.keys(object) as (keyof T)[]
 
-const modelOptions = {} as {
-  client: SupabaseClient
-} & ModelConfig
-
-interface ModelOptions<Db = any> extends ModelConfig {
-  client?: SupabaseClient<Db>
-  tableName?: string
-}
-
-interface ModelConfig {
-  naming?: (key: string) => string
-}
+const modelOptions = Empty<
+  {
+    client: SupabaseClient
+  } & ModelConfig
+>()
 
 export function defineModelConfig<Db = any>(
   client: SupabaseClient<Db>,
@@ -71,33 +71,34 @@ export function defineModel<A = Record<string, Attribute>>(
 ) {
   type Attrs = typeof attributes
   type Schema = SchemaFrom<Attrs>
-  type ModelSchema = ModelClass<Attrs>
 
-  let { naming, client, tableName } = {
-    naming: underscore,
+  const { naming, client, tableName } = {
+    naming: snakeCase,
     ...modelOptions,
     ...options,
   }
 
   const schema = object(mapValues(attributes, 'type') as ShapeFrom<Attrs>)
 
-  @Implements<ModelSchema>()
+  @Implements<ModelClass<Attrs>>()
   class model implements Model<Attrs> {
+    static primaryKey = 'id'
     static client = client
     static schema = schema
     static attributes = attributes
-    static transforms: AnyObject<Transform> = {}
-
-    static primaryKey = 'id'
+    static transforms = Empty<AnyObject<Transform>>()
     static get tableName() {
-      tableName ??= pluralize(naming(this.name))
-      defineProperty(model, 'tableName', { value: tableName })
-      return tableName
+      const value = tableName ?? pluralize(naming(this.name))
+      defineProperty(model, 'tableName', { value })
+      return value
     }
 
-    $attributes: AnyObject = {}
-    $dirty: Partial<Schema> = {}
-    $changed = hasKey(this.$dirty) as Record<keyof Schema, boolean>
+    $attributes = Empty<AnyObject>()
+    $dirty = Empty<Partial<Schema>>()
+
+    $changed = new Proxy(this, {
+      get: (target, key) => hasOwnKey(target.$dirty, key),
+    }) as Record<keyof Attrs, boolean>
 
     constructor(value?: AnyObject) {
       if (value) this.$take(value)
@@ -107,24 +108,12 @@ export function defineModel<A = Record<string, Attribute>>(
       return model
     }
 
-    static async find(id: string | number) {
-      const { data, error } = await this.client
-        .from(this.tableName)
-        .select('*')
-        .eq(this.primaryKey, id)
-
-      if (error) throw error
-
-      const record = data[0]
-
-      if (!record) {
-        throw new Error(`Record not found (id: ${id})`)
-      }
-      return new this(record)
-    }
-
     get $isDirty() {
       return !isEmpty(this.$dirty)
+    }
+
+    $commit() {
+      this.$dirty = Empty()
     }
 
     $get<K extends keyof Schema>(key: K) {
@@ -152,19 +141,25 @@ export function defineModel<A = Record<string, Attribute>>(
         values[key] = transform.take(values[key])
       })
       this.$attributes = values
+      this.$commit()
     }
 
     $emit<K extends keyof Schema>(...keys: K[]) {
-      const values =
-        keys.length > 0
-          ? pick(this.$attributes, ...keys.map(naming as (key: K) => string))
-          : { ...this.$attributes }
+      const { attributes, transforms } = model
 
-      forEach(model.transforms, (transform, key) => {
-        if (hasOwnProperty.call(values, key))
-          values[key] = transform.emit(values[key])
-      })
-      return values
+      if (isEmpty(keys)) {
+        keys = keysOf(model.schema.shape) as K[]
+      }
+
+      return keys.reduce((emit, _key) => {
+        const key = attributes[_key].column
+        return {
+          ...emit,
+          [key]: hasOwnKey(transforms, key)
+            ? transforms[key].emit(this.$attributes[key])
+            : this.$attributes[key],
+        }
+      }, {} as AnyObject)
     }
 
     $parse() {
@@ -185,15 +180,42 @@ export function defineModel<A = Record<string, Attribute>>(
 
     async update() {
       const issues = this.validate()
-      if (issues.any) return issues
+      if (issues.any || !this.$isDirty) return issues
 
-      // const record = this.$emit(...(keysOf(this.$dirty) as (keyof Schema)[]))
+      const id = this[model.primaryKey as keyof this]
+      const data = this.$emit(...keysOf(this.$dirty))
+
+      const { data: updates, error } = await client
+        .from(model.tableName)
+        .update(data)
+        .eq(model.primaryKey, id)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      this.$take(updates)
+
+      return issues
     }
 
     toJSON() {
       return mapValues(attributes, (value) => {
         return this.$attributes[value.column] as Json
       })
+    }
+
+    static async find(id: string | number) {
+      const { data, error } = await this.client
+        .from(this.tableName)
+        .select('*')
+        .eq(this.primaryKey, id)
+        .single()
+
+      if (error) throw error
+      if (!data) throw new Error(`Record not found (id: ${id})`)
+
+      return new this(data)
     }
   }
 
@@ -203,7 +225,7 @@ export function defineModel<A = Record<string, Attribute>>(
     option.column ||= naming(key)
 
     if (option.take || option.emit) {
-      model.transforms[attributes[key as keyof Schema].column] = {
+      model.transforms[attributes[key as keyof Attrs].column] = {
         take: option.take ?? identity,
         emit: option.emit ?? identity,
       }
@@ -219,15 +241,9 @@ export function defineModel<A = Record<string, Attribute>>(
     })
   })
 
-  return model as ModelSchema & {
+  return model as ModelClass<Attrs> & {
     new (...args: any[]): Simplify<model & Schema>
   }
-}
-
-function hasKey<T extends object = object>(target: T) {
-  return new Proxy(target, {
-    get: (target, key) => hasOwnProperty.call(target, key),
-  })
 }
 
 export class Issues extends Array<ZodIssue> {

@@ -2,15 +2,16 @@
 import 'dotenv/config'
 
 import { Database } from '../supabase/types'
+import { string, number, object, boolean } from 'zod'
+
 import {
   defineModel,
   defineModelConfig,
-  attr as attr_,
+  attr as $,
   transform,
   datetime,
   createClient,
 } from './model'
-import { string, number, object, boolean } from 'zod'
 
 const {
   env: { SUPABASE_URL, SUPABASE_ANON_KEY },
@@ -19,27 +20,44 @@ const {
 
 defineModelConfig(createClient<Database>(SUPABASE_URL!, SUPABASE_ANON_KEY!))
 
-// prettier-ignore
 class Record extends defineModel({
-  id:         attr_(number(), { primary: true }),
-  firstName:  attr_(string(), { column: 'given_name' }),
-  lastName:   attr_(string(), { column: 'family_name' }),
-  email:      attr_(string().email()),
-  birthday:   attr_(string(), { column: 'date_of_birth' }),
-  score:      attr_(number()),
-  data:       attr_(object({}).passthrough()),
-  isOkay:     attr_(boolean()),
-  createdAt:  attr_(datetime(), transform.datetime),
+  id: $(number(), { primary: true }),
+  firstName: $(string(), { column: 'given_name' }),
+  lastName: $(string(), { column: 'family_name' }),
+  email: $(string().email()),
+  birthday: $(string(), { column: 'date_of_birth' }),
+  score: $(number().int()),
+  data: $(object({}).passthrough()),
+  isOkay: $(boolean()),
+  createdAt: $(datetime(), transform.datetime),
 }) {
   get name() {
     return `${this.firstName} ${this.lastName}`
   }
 }
 
-Record.find(+argv[2]).then((record) => {
-  record.lastName = 'Silberlocke'
-  record.birthday = '1974-12-18'
-  record.data = { ...record.data, kontroverse: 'meinungen' }
-  console.log(record.toJSON())
+Record.find(+argv[2]).then(async (record) => {
   console.log(record)
+
+  if (record.lastName === 'Goldbacke') {
+    record.lastName = 'Silberlocke'
+    record.birthday = '1974-12-18'
+    record.data = { mehr: 'info', neue: 'sichtweisen', viele: 'inhalte' }
+  } else {
+    record.lastName = 'Goldbacke'
+    record.birthday = '1973-03-07'
+    record.data = { weniger: 'drin' }
+  }
+
+  return record
+    .update()
+    .then((issues) => {
+      if (issues.any) {
+        console.warn('🖐️ ', issues)
+        return
+      }
+      console.log('👍🏼 Updated')
+      console.log(record)
+    })
+    .catch((error) => console.error('💥', error))
 })

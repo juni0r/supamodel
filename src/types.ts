@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { SupabaseClient } from '@supabase/supabase-js'
-import { ZodObject, type ZodSchema, type TypeOf } from 'zod'
+import { ZodObject, type ZodSchema, type TypeOf, type ZodIssue } from 'zod'
 
 export function Implements<T>() {
   return <U extends T>(constructor: U) => {
@@ -12,15 +12,38 @@ export interface AnyObject<T = unknown> {
   [key: string]: T
 }
 
+export interface ModelOptions<Db = any> extends ModelConfig {
+  client?: SupabaseClient<Db>
+  tableName?: string
+}
+
+export interface ModelConfig {
+  naming?: (key: string) => string
+}
+
+export interface ValidationIssues extends Array<ZodIssue> {
+  any: boolean
+  none: boolean
+}
+
 export interface Model<
   Attrs extends Record<string, Attribute>,
   Schema = SchemaFrom<Attrs>,
 > {
+  $model: ModelClass<Attrs, Schema>
+
   $attributes: AnyObject
   $dirty: Partial<Schema>
+  $isDirty: boolean
   $changed: Record<keyof Schema, boolean>
+
   $get<K extends keyof Schema>(key: K): Schema[K]
   $set<K extends keyof Schema>(key: K, value: Schema[K]): void
+  $take(values: AnyObject): void
+  $emit<K extends keyof Schema>(...keys: K[]): AnyObject
+  $parse(): Schema
+  $commit(): void
+  validate(): ValidationIssues
   update<C extends this>(this: C): Promise<any>
   toJSON(): ToJSON
 }

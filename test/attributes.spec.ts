@@ -68,6 +68,13 @@ describe('Static attributes', () => {
     expect(Subject.attributes.familyName.column).toBe('last_name')
   })
 
+  it('transforms attributes', () => {
+    const date = '2020-02-02T20:20:20.020Z'
+    expect(Subject.attributes.dateTime.emit?.(DateTime.fromISO(date))).toBe(
+      date,
+    )
+  })
+
   it('maps attribute keys to schemas', () => {
     expect(Subject.schema.shape.familyName._def.typeName).toBe('ZodString')
   })
