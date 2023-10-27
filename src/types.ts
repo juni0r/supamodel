@@ -21,12 +21,26 @@ export interface ModelConfig {
   naming?: (key: string) => string
 }
 
+export interface ModelClass<Attrs extends Record<string, Attribute>> {
+  new (...args: any[]): Model<Attrs>
+
+  client: SupabaseClient
+  attributes: Attrs
+  schema: ZodObject<ShapeFrom<Attrs>, 'strip'>
+  transforms: AnyObject<Transform>
+  primaryKey: keyof Attrs
+  tableName: string
+
+  find(id: string | number): Promise<InstanceType<this>>
+}
+
 export interface Model<
   Attrs extends Record<string, Attribute>,
   Schema = SchemaFrom<Attrs>,
 > {
   $model: ModelClass<Attrs>
 
+  $id: string | number
   $attributes: AnyObject
   $dirty: Partial<Schema>
   $isDirty: boolean
@@ -42,19 +56,6 @@ export interface Model<
   validate(): ValidationIssues
   save<C extends this>(this: C): Promise<any>
   toJSON(): ToJSON
-}
-
-export interface ModelClass<Attrs extends Record<string, Attribute>> {
-  new (...args: any[]): Model<Attrs>
-
-  client: SupabaseClient
-  attributes: Attrs
-  schema: ZodObject<ShapeFrom<Attrs>, 'strip'>
-  transforms: AnyObject<Transform>
-  primaryKey: string
-  tableName: string
-
-  find(id: string | number): Promise<InstanceType<this>>
 }
 
 export interface Attribute<Z extends ZodSchema = ZodSchema> {

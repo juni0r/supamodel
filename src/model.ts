@@ -78,7 +78,7 @@ export function defineModel<A = Record<string, Attribute>>(
 
   @Implements<ModelClass<Attrs>>()
   class model implements Model<Attrs> {
-    static primaryKey = 'id'
+    static primaryKey = 'id' as keyof Attrs
     static client = client
     static schema = schema
     static attributes = attributes
@@ -87,6 +87,10 @@ export function defineModel<A = Record<string, Attribute>>(
       const value = tableName ?? pluralize(naming(this.name))
       defineProperty(model, 'tableName', { value })
       return value
+    }
+
+    get $id(): string | number {
+      return this[model.primaryKey as Schema[typeof model.primaryKey]]
     }
 
     $attributes = Empty<AnyObject>()
@@ -143,19 +147,21 @@ export function defineModel<A = Record<string, Attribute>>(
     }
 
     $emit<K extends keyof Schema>(...keys: K[]) {
-      const { attributes, transforms } = model
+      const { attributes, transforms, schema } = model
+      const { $attributes } = this
 
       if (isEmpty(keys)) {
-        keys = keysOf(model.schema.shape) as K[]
+        keys = keysOf(schema.shape) as K[]
       }
 
       return keys.reduce((emit, _key) => {
         const key = attributes[_key].column
+
         return {
           ...emit,
           [key]: hasOwnKey(transforms, key)
-            ? transforms[key].emit(this.$attributes[key])
-            : this.$attributes[key],
+            ? transforms[key].emit($attributes[key])
+            : $attributes[key],
         }
       }, {} as AnyObject)
     }
@@ -182,20 +188,21 @@ export function defineModel<A = Record<string, Attribute>>(
 
       const { tableName, primaryKey } = model
 
-      const id = this[primaryKey as keyof this]
-      const data = this.$emit(...keysOf(this.$dirty))
+      const { $id } = this
+      const record = this.$emit(...keysOf(this.$dirty))
 
-      const record =
-        id === undefined
-          ? client.from(tableName).insert(data)
-          : client.from(tableName).update(data).eq(primaryKey, id)
+      const write =
+        $id === undefined
+          ? client.from(tableName).insert(record)
+          : client
+              .from(tableName)
+              .update(record)
+              .eq(primaryKey as string, $id)
 
-      const { data: updates, error } = await record.select().single()
-
+      const { data, error } = await write.select().single()
       if (error) throw error
 
-      this.$take(updates)
-
+      this.$take(data)
       return issues
     }
 
@@ -209,7 +216,7 @@ export function defineModel<A = Record<string, Attribute>>(
       const { data, error } = await this.client
         .from(this.tableName)
         .select('*')
-        .eq(this.primaryKey, id)
+        .eq(this.primaryKey as string, id)
         .single()
 
       if (error) throw error
@@ -220,7 +227,7 @@ export function defineModel<A = Record<string, Attribute>>(
   }
 
   forEach(attributes, (option, key) => {
-    if (option.primary) model.primaryKey = key
+    if (option.primary) model.primaryKey = key as keyof Attrs
 
     option.column ||= naming(key)
 
