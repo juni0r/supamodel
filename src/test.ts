@@ -19,7 +19,7 @@ defineModelConfig({
 })
 
 class Record extends defineModel({
-  id: attr(number(), { primary: true }),
+  id: attr(number()),
   firstName: attr(string(), { column: 'given_name' }),
   lastName: attr(string(), { column: 'family_name' }),
   email: attr(string().email()),

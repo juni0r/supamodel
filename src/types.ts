@@ -5,7 +5,9 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { PostgrestFilterBuilder } from '@supabase/postgrest-js'
 import type { GenericSchema } from '@supabase/supabase-js/dist/module/lib/types'
 
-import type { FnMap } from './fnMap'
+import type { FnMap, anyKey } from './fnMap'
+export type { FnMap, anyKey }
+
 import type Issues from './issues'
 export type { Issues }
 
@@ -15,8 +17,10 @@ export function Implements<T>() {
   }
 }
 
+export type Id = string | number
+
 export interface AnyObject<T = any> {
-  [key: string | number | symbol]: T
+  [key: anyKey]: T
 }
 
 export interface ModelOptions<Db = any> extends Partial<ModelConfig<Db>> {
@@ -29,30 +33,33 @@ export interface ModelConfig<Db = any> {
   naming?: KeyMapper
 }
 
-export interface ModelClass<Attrs extends Attributes> {
+export interface ModelClass<Attrs extends Attributes = Attributes> {
   new (...args: any[]): Model<Attrs>
 
   client: SupabaseClient
   attributes: Attrs
   transforms: AnyObject<Transform>
   schema: ZodObject<ZodShapeFrom<Attrs>>
-  primaryKey: keyof Attrs
+  primaryKey: string & keyof Attrs
   tableName: string
   naming: KeyMapper
   attributeToColumn: FnMap<keyof Attrs, string>
   columnToAttribute: FnMap<string, keyof Attrs>
-  find(id: string | number): Promise<InstanceType<this>>
+  find(id: Id): Promise<InstanceType<this>>
   findAll(
     scoped?: (scope: FilterBuilder) => FilterBuilder,
   ): Promise<InstanceType<this>[]>
   insert(record: AnyObject): any
-  update(id: string | number, record: AnyObject): any
+  update(id: Id, record: AnyObject): any
 }
 
-export interface Model<Attrs extends Attributes, Schema = SchemaFrom<Attrs>> {
+export interface Model<
+  Attrs extends Attributes = Attributes,
+  Schema = SchemaFrom<Attrs>,
+> {
   $model: ModelClass<Attrs>
 
-  $id: string | number
+  $id: Id
   $attributes: AnyObject
   $dirty: Partial<Schema>
   $changed: Changed<Schema>
@@ -76,18 +83,12 @@ export interface Model<Attrs extends Attributes, Schema = SchemaFrom<Attrs>> {
 export interface Attribute<Z extends ZodSchema = ZodSchema> {
   type: Z
   column: string
-  primary: boolean
   take?: (value: any) => TypeOf<Z>
   emit?: (value: TypeOf<Z>) => any
 }
 
-export type KeyMap<
-  From extends string | number | symbol = string,
-  To = string,
-> = Record<From, To>
-
 export interface KeyMapper {
-  (key: string | number | symbol): string
+  (key: anyKey): string
 }
 
 export interface Attributes {

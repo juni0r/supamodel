@@ -23,7 +23,7 @@ defineModelConfig({
 })
 
 class Record extends defineModel({
-  id: $(number(), { primary: true }),
+  id: $(number()),
   firstName: $(string(), { column: 'given_name' }),
   lastName: $(string(), { column: 'family_name' }),
   email: $(string().email()),

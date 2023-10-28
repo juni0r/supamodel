@@ -3,7 +3,7 @@ import { defineModel, attr as $, datetime, DateTime } from '../src/model'
 import { string, date, number } from 'zod'
 
 class Subject extends defineModel({
-  id: $(number(), { primary: true }),
+  id: $(number()),
 
   givenName: $(string()),
   familyName: $(string(), { column: 'last_name' }),

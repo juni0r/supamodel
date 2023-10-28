@@ -1,4 +1,5 @@
 import type { Simplify } from 'type-fest'
+import type { PostgrestError } from '@supabase/postgrest-js'
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 export { createClient, type SupabaseClient }
@@ -27,14 +28,15 @@ import type {
   ModelClass,
   ModelConfig,
   ModelOptions,
-  SchemaFrom,
-  Transform,
   Attributes,
   AsAttributes,
+  SchemaFrom,
+  Transform,
+  Changed,
   FilterBuilder,
   AnyObject,
   Json,
-  Changed,
+  Id,
 } from './types'
 
 import Issues from './issues'
@@ -68,8 +70,8 @@ export function defineModel<A = Attributes>(
     static naming = naming
 
     static attributes = attributes
-    static transforms = New<AnyObject<Transform>>()
     static schema = zodObjectFrom(attributes)
+    static transforms = New<AnyObject<Transform>>()
 
     static attributeToColumn = fnMap<keyof Attrs, string>()
     static columnToAttribute = fnMap<string, keyof Attrs>()
@@ -79,7 +81,7 @@ export function defineModel<A = Attributes>(
       defineProperty(this, 'tableName', { value })
       return value
     }
-    static primaryKey = primaryKey as keyof Attrs
+    static primaryKey = primaryKey as string & keyof Attrs
 
     $attributes = New()
 
@@ -96,7 +98,7 @@ export function defineModel<A = Attributes>(
     }
 
     get $id() {
-      return this[model.primaryKey as keyof this] as string | number
+      return this[model.primaryKey as keyof this] as Id
     }
 
     get $isPersisted() {
@@ -196,16 +198,20 @@ export function defineModel<A = Attributes>(
     }
 
     async save() {
-      if (!this.$isDirty) return Issues.none()
+      const { client, tableName, primaryKey } = this.$model
+
+      if (!this.$isDirty) {
+        return Issues.none()
+      }
 
       const issues = this.validate()
-      if (issues.any) return issues
+      if (issues.any) {
+        return issues
+      }
 
       const record = this.$emit({ onlyDirty: true })
 
-      const { client, tableName, primaryKey } = this.$model
-
-      const { error, data } = await (!this.$isPersisted
+      const { error, data } = await (this.$isNewRecord
         ? client.from(tableName).insert(record)
         : client
             .from(tableName)
@@ -215,10 +221,11 @@ export function defineModel<A = Attributes>(
         .select()
         .single()
 
-      if (error) throw error
+      if (error) throw new RecordNotSaved(error, this.$id)
 
       this.$reset()
       this.$take(data)
+
       return issues
     }
 
@@ -242,7 +249,7 @@ export function defineModel<A = Attributes>(
       return data.map((record) => new this(record))
     }
 
-    static async find(id: string | number) {
+    static async find(id: Id) {
       const { data, error } = await this.client
         .from(this.tableName)
         .select()
@@ -250,7 +257,7 @@ export function defineModel<A = Attributes>(
         .single()
 
       if (error) throw error
-      if (!data) throw new Error(`Record not found (id: ${id})`)
+      if (!data) throw new RecordNotFound(this.tableName, id)
 
       return new this(data)
     }
@@ -259,7 +266,7 @@ export function defineModel<A = Attributes>(
       return this.client.from(this.tableName).insert(record)
     }
 
-    static update(id: string | number, record: AnyObject) {
+    static update(id: Id, record: AnyObject) {
       return this.client
         .from(this.tableName)
         .update(record)
@@ -269,16 +276,11 @@ export function defineModel<A = Attributes>(
 
   const { prototype, transforms, attributeToColumn, columnToAttribute } = model
 
-  forEach(keysOf(attributes), (key) => {
-    const option = attributes[key]
+  forEach(attributes, (option, key) => {
     const column = (option.column ||= model.naming(key))
 
     attributeToColumn[key] = column
-    columnToAttribute[column] = key
-
-    if (option.primary) {
-      model.primaryKey = key
-    }
+    columnToAttribute[column] = key as keyof Attrs
 
     if (option.take || option.emit) {
       transforms[column] = {
@@ -299,5 +301,24 @@ export function defineModel<A = Attributes>(
 
   return model as ModelClass<Attrs> & {
     new (...args: unknown[]): Simplify<model & Schema>
+  }
+}
+
+export class RecordNotFound extends Error {
+  constructor(tableName: string, id: Id) {
+    super(`No ${tableName} with primary key ${JSON.stringify(id)}`) // (1)
+    this.name = 'RecordNotFound' // (2)
+  }
+}
+
+export class RecordNotSaved extends Error implements PostgrestError {
+  details: string
+  hint: string
+  code: string
+
+  constructor({ message, ...error }: PostgrestError, id: Id) {
+    const saved = id ? 'updated' : 'created'
+    super(`Record not ${saved} with primary key ${id} (${message})`) // (1)
+    assign(this, error, { name: 'RecordNotSaved' }) // (3)
   }
 }

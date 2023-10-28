@@ -5,39 +5,37 @@ const {
   prototype: { hasOwnProperty },
 } = Object
 
-export interface FnMap<
-  K extends string | number | symbol = string,
-  T = any,
-  B = Record<K, T>,
-> {
+export type anyKey = string | number | symbol
+
+export interface FnMap<K extends anyKey = string, T = any, B = Record<K, T>> {
   (key: keyof B): T
-  [key: string | number | symbol]: T
+  [key: anyKey]: T
 }
 
 export default function fnMap<
-  K extends string | number | symbol = string,
+  K extends anyKey = string,
   T = any,
   B = Record<K, T>,
 >() {
-  const bag = Object.create(null) as B
-  const get = (key: keyof B) => bag[key]
+  const map = Object.create(null) as B
+  const get = (key: keyof B) => map[key]
 
   return new Proxy(get, {
     get(_t: B, key: keyof B) {
-      return bag[key]
+      return map[key]
     },
     set(_t: B, key: keyof B, v: any) {
-      bag[key] = v
+      map[key] = v
       return true
     },
-    has(_t: B, key: string) {
-      return hasOwnProperty.call(bag, key)
+    has(_t: B, key: K) {
+      return hasOwnProperty.call(map, key)
     },
     ownKeys() {
-      return keys(bag as object)
+      return keys(map as object)
     },
-    getOwnPropertyDescriptor(_t: B, key: string) {
-      return getOwnPropertyDescriptor(bag, key)
+    getOwnPropertyDescriptor(_t: B, key: K) {
+      return getOwnPropertyDescriptor(map, key)
     },
   } as ProxyHandler<typeof get>) as FnMap<K, T, B>
 }

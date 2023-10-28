@@ -1,7 +1,13 @@
 import { object, type ZodSchema } from 'zod'
 import { pluralize, underscore } from 'inflection'
 import mapValues from 'lodash.mapvalues'
-import type { AnyObject, Attribute, Attributes, ZodShapeFrom } from './types'
+import type {
+  anyKey,
+  AnyObject,
+  Attribute,
+  Attributes,
+  ZodShapeFrom,
+} from './types'
 
 const New = <T extends AnyObject = AnyObject>() => Object.create(null) as T
 
@@ -14,7 +20,7 @@ const {
   prototype: { hasOwnProperty },
 } = Object
 
-function hasOwnKey(object: object, key: symbol | string | number) {
+function hasOwnKey(object: object, key: anyKey) {
   return hasOwnProperty.call(object, key)
 }
 
@@ -22,7 +28,7 @@ function keysOf<T extends object>(object: T) {
   return keys(object) as (keyof T)[]
 }
 
-function snakeCase(key: string | number | symbol) {
+function snakeCase(key: anyKey) {
   return underscore(key as string)
 }
 
@@ -48,7 +54,7 @@ export function attr<Z extends ZodSchema>(
   type: Z,
   options?: Partial<Omit<Attribute<Z>, 'type'>>,
 ) {
-  return { type, primary: false, column: '', ...options }
+  return { type, column: '', ...options }
 }
 
 export function hasKeyProxy<T extends object>(object: T) {
