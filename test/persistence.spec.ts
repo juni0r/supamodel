@@ -34,14 +34,16 @@ describe('Model', () => {
 
   it('mocks', async () => {
     record.name = 'zonk'
+    record.layer = 42
+    record.date = new Date('2121-12-12T12:12:12.121Z')
 
     client.on(/records update/, () => ({
       data: { name: 'name_returned' },
     }))
 
     const issues = await record.save()
-    expect(issues.any).toBeFalsy()
 
+    expect(issues.any).toBeFalsy()
     expect(record.name).toBe('name_returned')
   })
 })

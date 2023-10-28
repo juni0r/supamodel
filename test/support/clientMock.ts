@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js'
-import util from 'node:util'
+// import util from 'node:util'
 
 const createClientMock = () => new ClientMock()
 export default createClientMock
@@ -21,7 +21,6 @@ export class ClientMock {
 
       let result: unknown = undefined
 
-      console.log(command)
       for (const hook of this.hooks) {
         result = hook.execute(command)
         if (result !== undefined) break
@@ -63,12 +62,29 @@ function commandProxy(command: string[] = [], then: () => unknown) {
       if (key === 'then')
         return (cb: (val: unknown) => unknown) => cb(Promise.resolve(then()))
 
-      return (...args: unknown[]) => {
-        // console.log(key, ...args)
-        push.call(target, key, ...args.map((arg) => util.inspect(arg)))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (...args: any[]) => {
+        push.call(target, key, ...args.map(inspect))
         return proxy
       }
     },
   })
   return proxy
+}
+
+function inspect(value: object | string | number | boolean) {
+  switch (typeof value) {
+    case 'object':
+      return Array.isArray(value)
+        ? `[${value.map(inspect).join(', ')}]`
+        : `{ ${Object.entries(value)
+            .reduce(
+              (acc, [key, val]) => [...acc, `${key}: ${inspect(val)}`],
+              [] as string[],
+            )
+            .join(', ')} }`
+    case 'string':
+      return `'${value}'`
+  }
+  return String(value)
 }

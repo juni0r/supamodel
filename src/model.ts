@@ -3,14 +3,24 @@ import type { Simplify } from 'type-fest'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 export { createClient, type SupabaseClient }
 
-import { object, ZodError, type ZodSchema, type ZodIssue } from 'zod'
+import { object } from 'zod'
 
 import forEach from 'lodash.foreach'
 import mapValues from 'lodash.mapvalues'
 import isEmpty from 'lodash.isempty'
 import isEqual from 'fast-deep-equal'
 
-import { underscore, pluralize } from 'inflection'
+import {
+  Empty,
+  assign,
+  keysOf,
+  hasOwnKey,
+  defineProperty,
+  pluralize,
+  snakeCase,
+  identity,
+  hasKeyProxy,
+} from './util'
 
 import { Implements } from './types'
 import type {
@@ -19,86 +29,63 @@ import type {
   ModelConfig,
   ModelOptions,
   SchemaFrom,
-  ShapeFrom,
+  ZodShapeFrom,
   Transform,
-  Attribute,
   Attributes,
-  AttributeOptions,
-  ValidationIssues,
+  AsAttributes,
+  FilterBuilder,
+  EmitOptions,
   AnyObject,
   Json,
-  FilterBuilder,
+  KeyMap,
 } from './types'
 
+import Issues from './issues'
+
+export { attr } from './util'
 export * from './schema'
 
-const {
-  assign,
-  defineProperty,
-  setPrototypeOf,
-  prototype: { hasOwnProperty },
-} = Object
+const modelOptions = Empty<ModelConfig>()
 
-const identity = (v: unknown) => v
-const snakeCase = (key: string) => underscore(key)
-const Empty = <T = object>() => Object.create(null) as T
-const hasOwnKey = (object: object, key: symbol | string | number) =>
-  hasOwnProperty.call(object, key)
-const keysOf = <T extends object>(object: T) =>
-  Object.keys(object) as (keyof T)[]
-
-const modelOptions = Empty<
-  {
-    client: SupabaseClient
-  } & ModelConfig
->()
-
-export function defineModelConfig(options: typeof modelOptions) {
+export function defineModelConfig(options: ModelConfig) {
   assign(modelOptions, options)
 }
 
-export const attr = <Z extends ZodSchema>(
-  type: Z,
-  options?: AttributeOptions<Z>,
-) => ({ type, primary: false, column: '', ...options })
-
-export function defineModel<A = Record<string, Attribute>>(
-  attributes: Attributes<A>,
-  options?: ModelOptions,
+export function defineModel<A = Attributes>(
+  attributes: AsAttributes<A>,
+  options: ModelOptions = {},
 ) {
+  options = { ...modelOptions, ...options }
+
   type Attrs = typeof attributes
   type Schema = SchemaFrom<Attrs>
 
-  const { naming, client, tableName } = {
-    naming: snakeCase,
-    ...modelOptions,
-    ...options,
-  }
-
-  const schema = object(mapValues(attributes, 'type') as ShapeFrom<Attrs>)
-
   @Implements<ModelClass<Attrs>>()
   class model implements Model<Attrs> {
-    static primaryKey = 'id' as keyof Attrs
-    static client = client
-    static schema = schema
+    static client = options.client!
     static attributes = attributes
     static transforms = Empty<AnyObject<Transform>>()
+    static schema = object(mapValues(attributes, 'type') as ZodShapeFrom<Attrs>)
+    static naming = options.naming ?? snakeCase
+    static primaryKey = (options.primaryKey ?? 'id') as keyof Attrs
     static get tableName() {
-      const value = tableName ?? pluralize(naming(this.name))
+      const value = options.tableName ?? pluralize(this.naming(this.name))
       defineProperty(this, 'tableName', { value })
       return value
     }
+    static attributeToColumn = Empty<KeyMap>()
+    static columnToAttribute = Empty<KeyMap>()
 
     get $id() {
       return this[model.primaryKey as keyof this] as string | number
     }
 
     $attributes = Empty<AnyObject>()
-    $dirty = Empty<Partial<Schema>>()
-    $changed = hasKeyProxy(this.$dirty)
+    $dirty: Partial<Schema>
+    $changed: Record<keyof Schema, boolean>
 
     constructor(value?: AnyObject) {
+      this.$commit()
       if (value) this.$take(value)
     }
 
@@ -119,12 +106,25 @@ export function defineModel<A = Record<string, Attribute>>(
       this.$changed = hasKeyProxy(this.$dirty)
     }
 
+    $reset() {
+      if (this.$isDirty) {
+        const { attributeToColumn } = this.$model
+        forEach(
+          this.$dirty,
+          (value, key) => (this.$attributes[attributeToColumn[key]] = value),
+        )
+      }
+      this.$commit()
+    }
+
     $get<K extends keyof Schema>(key: K) {
-      return this.$attributes[attributes[key].column] as Schema[K]
+      return this.$attributes[
+        this.$model.attributeToColumn[key as string]
+      ] as Schema[K]
     }
 
     $set<K extends keyof Schema>(key: K, value: Schema[K]) {
-      const { column } = attributes[key]
+      const column = this.$model.attributeToColumn[key as string]
 
       if (key in this.$dirty) {
         if (isEqual(value, this.$dirty[key])) {
@@ -140,26 +140,49 @@ export function defineModel<A = Record<string, Attribute>>(
     }
 
     $take(values: AnyObject) {
-      this.$attributes = this.$model.transformFor('take', values)
-      this.$commit()
+      const { transforms, columnToAttribute } = this.$model
+
+      forEach(values, (value, column) => {
+        const key = columnToAttribute[column] as keyof Attrs
+
+        value = hasOwnKey(transforms, column)
+          ? transforms[column].take(value)
+          : value
+
+        if (hasOwnKey(this.$dirty, key)) {
+          this.$dirty[key] = value
+        } else {
+          this.$attributes[column] = value
+        }
+      })
     }
 
-    $emit<K extends keyof Schema>(...keys: K[]) {
-      return this.$model.transformFor('emit', this.$attributes, keys)
+    $emit({ onlyDirty = false }: EmitOptions = {}) {
+      const { attributes, transforms } = this.$model
+
+      const keys = onlyDirty
+        ? keysOf(this.$dirty).map((key) => attributes[key].column)
+        : keysOf(this.$attributes)
+
+      return keys.reduce((transformed, key) => {
+        return {
+          ...transformed,
+          [key]: hasOwnKey(transforms, key)
+            ? transforms[key].emit(this.$attributes[key])
+            : this.$attributes[key],
+        }
+      }, {})
     }
 
     $parse() {
-      return schema.parse(this)
+      return this.$model.schema.parse(this)
     }
 
     validate() {
       try {
         assign(this, this.$parse())
       } catch (error) {
-        if (error instanceof ZodError) {
-          return Issues.from(error.issues)
-        }
-        throw error
+        return Issues.handle(error)
       }
       return Issues.none()
     }
@@ -170,17 +193,23 @@ export function defineModel<A = Record<string, Attribute>>(
       const issues = this.validate()
       if (issues.any) return issues
 
-      const record = this.$emit(...keysOf(this.$dirty))
+      const record = this.$emit({ onlyDirty: true })
 
-      const { error, data } = await (this.$id === undefined
-        ? this.$model.insert(record)
-        : this.$model.update(this.$id, record)
+      const { client, tableName, primaryKey } = this.$model
+
+      const { error, data } = await (!this.$isPersisted
+        ? client.from(tableName).insert(record)
+        : client
+            .from(tableName)
+            .update(record)
+            .eq(primaryKey as string, this.$id)
       )
         .select()
         .single()
 
       if (error) throw error
 
+      this.$reset()
       this.$take(data)
       return issues
     }
@@ -196,10 +225,9 @@ export function defineModel<A = Record<string, Attribute>>(
     }
 
     static async findAll(scoped?: (scope: FilterBuilder) => FilterBuilder) {
-      let select = this.client.from(this.tableName).select()
-      if (scoped) select = scoped(select)
+      const query = this.client.from(this.tableName).select()
 
-      const { error, data } = await select
+      const { error, data } = await (scoped?.(query) ?? query)
       if (error) throw error
 
       return data.map((record) => new this(record))
@@ -228,49 +256,28 @@ export function defineModel<A = Record<string, Attribute>>(
         .update(record)
         .eq(this.primaryKey as string, id)
     }
-
-    static transformFor(
-      mode: 'take' | 'emit',
-      values: AnyObject,
-      keys?: (keyof Attrs)[],
-    ) {
-      const { attributes, transforms } = this
-
-      if (isEmpty(keys)) {
-        keys = keysOf(schema.shape)
-      }
-
-      return keys!.reduce((transformed, _key) => {
-        const key = attributes[_key].column
-        const value = values[key]
-
-        if (value === undefined) {
-          return transformed
-        }
-
-        return {
-          ...transformed,
-          [key]: hasOwnKey(transforms, key)
-            ? transforms[key][mode](value)
-            : value,
-        }
-      }, {} as AnyObject)
-    }
   }
 
-  forEach(attributes, (option, key) => {
-    if (option.primary) model.primaryKey = key as keyof Attrs
+  const { prototype, transforms, attributeToColumn, columnToAttribute } = model
 
-    option.column ||= naming(key)
+  forEach(attributes, (option, key) => {
+    const column = (option.column ||= model.naming(key))
+
+    attributeToColumn[key] = column
+    columnToAttribute[column] = key
+
+    if (option.primary) {
+      model.primaryKey = key as keyof Attrs
+    }
 
     if (option.take || option.emit) {
-      model.transforms[attributes[key as keyof Attrs].column] = {
+      transforms[column] = {
         take: option.take ?? identity,
         emit: option.emit ?? identity,
       }
     }
 
-    return defineProperty(model.prototype, key, {
+    return defineProperty(prototype, key, {
       get() {
         return this.$get(key)
       },
@@ -283,25 +290,4 @@ export function defineModel<A = Record<string, Attribute>>(
   return model as ModelClass<Attrs> & {
     new (...args: unknown[]): Simplify<model & Schema>
   }
-}
-
-export class Issues extends Array<ZodIssue> implements ValidationIssues {
-  static from(issues: ZodIssue[]) {
-    return setPrototypeOf(issues, this.prototype) as Issues
-  }
-  static none() {
-    return this.from([])
-  }
-  get any() {
-    return this.length > 0
-  }
-  get none() {
-    return this.length === 0
-  }
-}
-
-function hasKeyProxy<T extends object>(object: T) {
-  return new Proxy(object, {
-    get: (target, key) => hasOwnKey(target, key),
-  }) as Record<keyof T, boolean>
 }
