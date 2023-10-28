@@ -5,6 +5,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { PostgrestFilterBuilder } from '@supabase/postgrest-js'
 import type { GenericSchema } from '@supabase/supabase-js/dist/module/lib/types'
 
+import type { FnMap } from './fnMap'
 import type Issues from './issues'
 export type { Issues }
 
@@ -14,8 +15,8 @@ export function Implements<T>() {
   }
 }
 
-export interface AnyObject<T = unknown> {
-  [key: string]: T
+export interface AnyObject<T = any> {
+  [key: string | number | symbol]: T
 }
 
 export interface ModelOptions<Db = any> extends Partial<ModelConfig<Db>> {
@@ -33,13 +34,13 @@ export interface ModelClass<Attrs extends Attributes> {
 
   client: SupabaseClient
   attributes: Attrs
-  schema: ZodObject<ZodShapeFrom<Attrs>>
   transforms: AnyObject<Transform>
+  schema: ZodObject<ZodShapeFrom<Attrs>>
   primaryKey: keyof Attrs
   tableName: string
   naming: KeyMapper
-  attributeToColumn: KeyMap
-  columnToAttribute: KeyMap
+  attributeToColumn: FnMap<keyof Attrs, string>
+  columnToAttribute: FnMap<string, keyof Attrs>
   find(id: string | number): Promise<InstanceType<this>>
   findAll(
     scoped?: (scope: FilterBuilder) => FilterBuilder,
@@ -54,19 +55,21 @@ export interface Model<Attrs extends Attributes, Schema = SchemaFrom<Attrs>> {
   $id: string | number
   $attributes: AnyObject
   $dirty: Partial<Schema>
+  $changed: Changed<Schema>
+
   $isDirty: boolean
-  $changed: Record<keyof Schema, boolean>
   $isPersisted: boolean
+  $isNewRecord: boolean
 
   $get<K extends keyof Schema>(key: K): Schema[K]
   $set<K extends keyof Schema>(key: K, value: Schema[K]): void
   $take(values: AnyObject): void
-  $emit(options?: EmitOptions): AnyObject
+  $emit(options?: { onlyDirty?: boolean }): AnyObject
   $parse(): Schema
   $commit(): void
   $reset(): void
   validate(): Issues
-  save<C extends this>(this: C): Promise<any>
+  save<C extends this>(this: C): Promise<Issues>
   toJSON(): ToJSON
 }
 
@@ -78,16 +81,13 @@ export interface Attribute<Z extends ZodSchema = ZodSchema> {
   emit?: (value: TypeOf<Z>) => any
 }
 
-export interface KeyMap {
-  [key: string]: string
-}
+export type KeyMap<
+  From extends string | number | symbol = string,
+  To = string,
+> = Record<From, To>
 
 export interface KeyMapper {
-  (key: any): string
-}
-
-export interface EmitOptions {
-  onlyDirty?: boolean
+  (key: string | number | symbol): string
 }
 
 export interface Attributes {
@@ -108,6 +108,10 @@ export type SchemaFrom<T> = {
 
 export type ZodShapeFrom<T> = {
   [k in keyof T]: T[k] extends Attribute<any> ? T[k]['type'] : never
+}
+
+export type Changed<T> = {
+  [k in keyof T]: boolean
 }
 
 export interface Transform {

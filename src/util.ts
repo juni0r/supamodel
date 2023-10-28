@@ -1,38 +1,47 @@
-import { ZodSchema } from 'zod'
+import { object, type ZodSchema } from 'zod'
 import { pluralize, underscore } from 'inflection'
-import type { Attribute } from './types'
+import mapValues from 'lodash.mapvalues'
+import type { AnyObject, Attribute, Attributes, ZodShapeFrom } from './types'
 
-const Empty = <T = object>() => Object.create(null) as T
+const New = <T extends AnyObject = AnyObject>() => Object.create(null) as T
 
 const {
+  keys,
   assign,
+  entries: entriesOf,
   defineProperty,
   setPrototypeOf,
   prototype: { hasOwnProperty },
 } = Object
 
-const hasOwnKey = (object: object, key: symbol | string | number) =>
-  hasOwnProperty.call(object, key)
+function hasOwnKey(object: object, key: symbol | string | number) {
+  return hasOwnProperty.call(object, key)
+}
 
-const keysOf = <T extends object>(object: T) =>
-  Object.keys(object) as (keyof T)[]
+function keysOf<T extends object>(object: T) {
+  return keys(object) as (keyof T)[]
+}
 
-const identity = (v: unknown) => v
-
-const snakeCase = (key: string) => underscore(key)
+function snakeCase(key: string | number | symbol) {
+  return underscore(key as string)
+}
 
 export {
-  Empty,
+  New,
   assign,
   defineProperty,
   setPrototypeOf,
   hasOwnProperty,
   hasOwnKey,
   keysOf,
-  identity,
+  entriesOf,
   snakeCase,
   underscore,
   pluralize,
+}
+
+export function zodObjectFrom<A extends Attributes>(attributes: A) {
+  return object(mapValues(attributes, 'type') as ZodShapeFrom<A>)
 }
 
 export function attr<Z extends ZodSchema>(

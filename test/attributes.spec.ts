@@ -35,16 +35,25 @@ describe('Attributes', () => {
     })
   })
 
-  it('can be read', () => {
+  it('can get', () => {
+    expect(subject.$get('givenName')).toBe('Stella')
+  })
+
+  it('can set', () => {
+    subject.$set('givenName', 'Tom')
+    expect(subject.givenName).toBe('Tom')
+  })
+
+  it('has getters', () => {
     expect(subject.$id).toBe(123)
     expect(subject.id).toBe(123)
     expect(subject.givenName).toBe('Stella')
     expect(subject.familyName).toBe('Goldbacke')
   })
 
-  it('can be set', () => {
+  it('has setters', () => {
     subject.givenName = 'Tom'
-    expect(subject.name).toBe('Tom Goldbacke')
+    expect(subject.givenName).toBe('Tom')
   })
 
   it('takes dates', () => {
@@ -66,12 +75,12 @@ describe('Attributes', () => {
 
 describe('Static attributes', () => {
   it('maps attribute keys to column keys', () => {
-    expect(Subject.attributes.familyName.column).toBe('last_name')
+    expect(Subject.attributeToColumn.familyName).toBe('last_name')
   })
 
   it('transforms attributes', () => {
     const date = '2020-02-02T20:20:20.020Z'
-    expect(Subject.attributes.dateTime.emit?.(DateTime.fromISO(date))).toBe(
+    expect(Subject.transforms.date_time.emit?.(DateTime.fromISO(date))).toBe(
       date,
     )
   })
