@@ -38,6 +38,7 @@ import type {
 } from './types'
 
 import Issues from './issues'
+import { ZodDefault, ZodSchema } from 'zod'
 
 export { attr } from './util'
 export * from './schema'
@@ -162,6 +163,20 @@ export function defineModel<A = Attributes>(
           this.$attributes[column] = value
         }
       })
+    }
+
+    static defaults() {
+      return mapValues(this.schema.shape, (attr) =>
+        (attr as ZodSchema) instanceof ZodDefault
+          ? attr._def.defaultValue()
+          : attr.isNullable()
+          ? null
+          : undefined,
+      )
+    }
+
+    $takeDefaults() {
+      this.$take(this.$model.defaults())
     }
 
     $emit({ onlyDirty = false }: { onlyDirty?: boolean } = {}) {

@@ -1,3 +1,4 @@
+import type { maybe } from './types'
 import { custom } from 'zod'
 import { DateTime } from 'luxon'
 export { DateTime }
@@ -9,11 +10,14 @@ export const datetime = () =>
 
 export const transform = {
   date: {
-    take: (iso: string) => new Date(iso),
-    emit: (date: Date) => date?.toISOString(),
+    take: (iso: maybe<string>) => new Date(iso ?? 'invalid'),
+    emit: (date: maybe<Date>) => date?.toISOString() ?? '',
   },
   datetime: {
-    take: (iso: string) => DateTime.fromISO(iso, { zone: 'utc' }),
-    emit: (date: DateTime) => date.toUTC().toISO(),
+    take: (iso: maybe<string>) =>
+      iso
+        ? DateTime.fromISO(iso, { zone: 'utc' })
+        : DateTime.invalid('empty ISO string'),
+    emit: (date: maybe<DateTime>) => date?.toUTC().toISO() ?? '',
   },
 }

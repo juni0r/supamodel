@@ -19,6 +19,7 @@ export interface AnyObject<T = any> {
 }
 
 export type anyKey = string | number | symbol
+export type maybe<T> = T | null | undefined
 
 export type Id = string | number
 
@@ -51,6 +52,7 @@ export interface ModelClass<Attrs extends Attributes = Attributes> {
   insert(record: AnyObject): FilterBuilder
   update(id: Id, record: AnyObject): FilterBuilder
   delete(id: Id): FilterBuilder
+  defaults(): SchemaFrom<Attrs>
 }
 
 export interface Model<
@@ -70,8 +72,9 @@ export interface Model<
 
   $get<K extends keyof Schema>(key: K): Schema[K]
   $set<K extends keyof Schema>(key: K, value: Schema[K]): void
-  $take(values: AnyObject): void
   $emit(options?: { onlyDirty?: boolean }): AnyObject
+  $take(values: AnyObject): void
+  $takeDefaults(): void
   $parse(): Schema
   $commit(): void
   $reset(): void
