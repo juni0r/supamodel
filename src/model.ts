@@ -122,9 +122,8 @@ export function defineModel<A = Attributes>(
       const { attributeToColumn } = this.$model
 
       if (this.$isDirty) {
-        forEach(this.$dirty, (value, key) => {
-          const column = attributeToColumn[key as keyof Attrs]
-          this.$attributes[column] = value
+        keysOf(this.$dirty).forEach((key) => {
+          this.$attributes[attributeToColumn[key]] = this.$dirty[key]
         })
       }
       this.$commit()

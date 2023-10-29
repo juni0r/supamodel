@@ -38,7 +38,7 @@ class Record extends defineModel({
 Record.findAll((where) =>
   where
     .ilike('email', '%@mail.com')
-    .gte('date_of_birth', '1974-12-18')
+    .gte('date_of_birth', '1974-01-01')
     .eq('is_okay', false),
 )
   .then((records) => {
