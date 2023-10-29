@@ -1,7 +1,6 @@
 import 'dotenv/config'
 
 import { Database } from '../supabase/types'
-import { string, number, object, boolean } from 'zod'
 
 import {
   createClient,
@@ -10,7 +9,8 @@ import {
   transform,
   datetime,
   attr,
-} from './model'
+  z,
+} from '.'
 
 const { SUPABASE_URL, SUPABASE_ANON_KEY } = process.env
 
@@ -19,14 +19,14 @@ defineModelConfig({
 })
 
 class Record extends defineModel({
-  id: attr(number()),
-  firstName: attr(string(), { column: 'given_name' }),
-  lastName: attr(string(), { column: 'family_name' }),
-  email: attr(string().email()),
-  birthday: attr(string(), { column: 'date_of_birth' }),
-  score: attr(number()),
-  data: attr(object({}).passthrough()),
-  isOkay: attr(boolean()),
+  id: attr(z.number()),
+  firstName: attr(z.string(), { column: 'given_name' }),
+  lastName: attr(z.string(), { column: 'family_name' }),
+  email: attr(z.string().email()),
+  birthday: attr(z.string(), { column: 'date_of_birth' }),
+  score: attr(z.number()),
+  data: attr(z.object({}).passthrough()),
+  isOkay: attr(z.boolean()),
   createdAt: attr(datetime(), transform.datetime),
 }) {}
 

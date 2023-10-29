@@ -1,6 +1,3 @@
-import { object, type ZodSchema } from 'zod'
-import { pluralize, underscore } from 'inflection'
-import mapValues from 'lodash.mapvalues'
 import type {
   anyKey,
   AnyObject,
@@ -8,6 +5,11 @@ import type {
   Attributes,
   ZodShapeFrom,
 } from './types'
+
+import mapValues from 'lodash.mapvalues'
+
+import { object, type ZodSchema } from 'zod'
+import { underscore, camelize, titleize, pluralize } from 'inflection'
 
 const New = <T extends AnyObject = AnyObject>() => Object.create(null) as T
 
@@ -32,6 +34,14 @@ function snakeCase(key: anyKey) {
   return underscore(key as string)
 }
 
+function camelCase(key: anyKey) {
+  return camelize(key as string, true)
+}
+
+function titleCase(key: anyKey) {
+  return titleize(key as string)
+}
+
 export {
   New,
   assign,
@@ -42,7 +52,8 @@ export {
   keysOf,
   entriesOf,
   snakeCase,
-  underscore,
+  camelCase,
+  titleCase,
   pluralize,
 }
 

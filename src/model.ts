@@ -1,9 +1,6 @@
 import type { Simplify } from 'type-fest'
 import type { PostgrestError } from '@supabase/postgrest-js'
 
-import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-export { createClient, type SupabaseClient }
-
 import forEach from 'lodash.foreach'
 import mapValues from 'lodash.mapvalues'
 import isEmpty from 'lodash.isempty'
@@ -35,9 +32,9 @@ import type {
   Changed,
   FilterBuilder,
   AnyObject,
+  KeyMap,
   Json,
   Id,
-  KeyMap,
 } from './types'
 
 import Issues from './issues'
@@ -85,8 +82,8 @@ export function defineModel<A = Attributes>(
 
     $attributes = New()
 
-    $dirty: Partial<Schema>
-    $changed: Changed<Schema>
+    $dirty!: Partial<Schema>
+    $changed!: Changed<Schema>
 
     constructor(value?: AnyObject) {
       this.$commit()
@@ -335,9 +332,9 @@ export class RecordNotFound extends Error {
 }
 
 export class DatabaseError extends Error implements PostgrestError {
-  details: string
-  hint: string
-  code: string
+  details!: string
+  hint!: string
+  code!: string
 
   constructor({ message, ...error }: PostgrestError) {
     super(message) // (1)

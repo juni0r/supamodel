@@ -1,6 +1,6 @@
 import { ZodError, type ZodIssue } from 'zod'
 
-export default class Issues extends Array<ZodIssue> {
+export class Issues extends Array<ZodIssue> {
   static from(issues: ZodIssue[]) {
     return Object.setPrototypeOf(issues, this.prototype) as Issues
   }
@@ -22,3 +22,4 @@ export default class Issues extends Array<ZodIssue> {
     return this.length === 0
   }
 }
+export default Issues

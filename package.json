@@ -1,22 +1,32 @@
 {
   "name": "supabase-model",
-  "version": "1.0.0",
   "description": "Supabase ORM",
+  "keywords": [
+    "supabase",
+    "model",
+    "orm"
+  ],
+  "author": "andreas.korth@gmail.com",
+  "license": "MIT",
+  "version": "1.0.0",
   "engines": {
     "node": ">=20.7.0 <21.0.0"
   },
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "tsc": "tsc",
+    "build": "tsup",
     "test": "vitest run",
     "test:watch": "vitest",
-    "coverage": "vitest run --coverage",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix"
   },
-  "keywords": [],
-  "author": "andreas.korth@gmail.com",
-  "license": "MIT",
   "dependencies": {
     "@supabase/postgrest-js": "^1.8.5",
     "@supabase/supabase-js": "^2.38.3",
@@ -51,6 +61,7 @@
     "prettier": "^3.0.3",
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
+    "tsup": "^7.2.0",
     "tsx": "^3.14.0",
     "type-fest": "^4.5.0",
     "typescript": "^5.2.2",

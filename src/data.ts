@@ -1,17 +1,15 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import 'dotenv/config'
 
 import { Database } from '../supabase/types'
-import { string, number, object, boolean } from 'zod'
-
 import {
+  createClient,
   defineModel,
   defineModelConfig,
-  attr as $,
   transform,
   datetime,
-  createClient,
-} from './model'
+  attr,
+  z,
+} from '.'
 
 const { SUPABASE_URL, SUPABASE_ANON_KEY } = process.env
 
@@ -20,15 +18,15 @@ defineModelConfig({
 })
 
 class Record extends defineModel({
-  id: $(number()),
-  firstName: $(string(), { column: 'given_name' }),
-  lastName: $(string(), { column: 'family_name' }),
-  email: $(string().email()),
-  birthday: $(string(), { column: 'date_of_birth' }),
-  score: $(number().int()),
-  data: $(object({}).passthrough()),
-  isOkay: $(boolean()),
-  createdAt: $(datetime(), transform.datetime),
+  id: attr(z.number()),
+  firstName: attr(z.string(), { column: 'given_name' }),
+  lastName: attr(z.string(), { column: 'family_name' }),
+  email: attr(z.string().email()),
+  birthday: attr(z.string(), { column: 'date_of_birth' }),
+  score: attr(z.number().int()),
+  data: attr(z.object({}).passthrough()),
+  isOkay: attr(z.boolean()),
+  createdAt: attr(datetime(), transform.datetime),
 }) {
   get name() {
     return `${this.firstName} ${this.lastName}`

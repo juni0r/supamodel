@@ -1,23 +1,28 @@
 {
   "compilerOptions": {
     "target": "es2022",
-    "module": "nodenext",
-    "outDir": "dist",
-    "strictPropertyInitialization": false,
+    "module": "commonjs",
+    // "lib": ["ES2020"],
+    // "outDir": "dist",
+
+    // "moduleResolution": "node16",
     "sourceMap": true,
-    "allowJs": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "experimentalDecorators": true,
+
+    /* Linting */
+    "strict": true,
+    "skipLibCheck": true,    
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "moduleResolution": "nodenext",
-    "resolveJsonModule": true,
-    "strict": true,
-    "noImplicitAny": true,
-    "esModuleInterop": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "noFallthroughCasesInSwitch": true,
+    // "strictPropertyInitialization": false,
+    // "noImplicitAny": true,
+
+    /* Config */
   },
-  "include": ["src/*.ts", "src/**/*.ts"],
-  "exclude": ["node_modules"],
-  "typeRoots": ["node_modules/@types"],
-  "lib": ["es2022"]
+  "include": ["src"],
+  // "exclude": ["node_modules"],
+  // "typeRoots": ["node_modules/@types"]
 }
