@@ -1,7 +1,8 @@
 {
   "ts": {
     "compilerOptions": {
-      "moduleResolution": "node"
+      "moduleResolution": "node",
+      "jsx": "preserve"
     }
   }
 }
