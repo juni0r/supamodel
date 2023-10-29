@@ -18,6 +18,10 @@
   "files": [
     "dist"
   ],
+  "lint-staged": {
+    "**/*.{js,ts,tsx}": [ "eslint --fix" ],
+    "**/*": "prettier --write --ignore-unknown"
+  },
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
@@ -25,7 +29,8 @@
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/**/*.ts",
-    "lint:fix": "eslint src/**/*.ts --fix"
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "prepare": "husky install"
   },
   "dependencies": {
     "@supabase/postgrest-js": "^1.8.5",
@@ -43,6 +48,8 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@commitlint/cli": "^18.2.0",
+    "@commitlint/config-conventional": "^18.1.0",
     "@types/inflection": "^1.13.1",
     "@types/lodash.defaultsdeep": "^4.6.8",
     "@types/lodash.foreach": "^4.5.8",
@@ -58,6 +65,8 @@
     "eslint": "^8.52.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.1",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.0.2",
     "prettier": "^3.0.3",
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
