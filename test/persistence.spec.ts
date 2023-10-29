@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { defineModel, attr as $, transform } from '../src/model'
+import { model, $, transform } from '../src'
 import { string, date, number, boolean } from 'zod'
 import createClientMock from './support/clientMock'
 
 describe('Model', () => {
   const client = createClientMock()
-  class Record extends defineModel(
+  class Record extends model(
     {
       id: $(number().int()),
       name: $(string().min(1)),

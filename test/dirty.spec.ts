@@ -1,14 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import {
-  defineModel,
-  attr as $,
-  transform,
-  datetime,
-  DateTime,
-} from '../src/model'
+import { model, $, transform, datetime, DateTime } from '../src'
 import { string, date, number, boolean } from 'zod'
 
-class Subject extends defineModel({
+class Subject extends model({
   name: $(string()),
   position: $(number()),
   isOkay: $(boolean()),

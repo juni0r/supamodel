@@ -1,15 +1,7 @@
-import type {
-  anyKey,
-  AnyObject,
-  Attribute,
-  Attributes,
-  ZodShapeFrom,
-} from './types'
-
-import mapValues from 'lodash.mapvalues'
-
 import { object, type ZodSchema } from 'zod'
-import { underscore, camelize, titleize, pluralize } from 'inflection'
+import { underscore, camelize, dasherize, pluralize } from 'inflection'
+
+import type { anyKey, AnyObject, Attribute } from './types'
 
 const New = <T extends AnyObject = AnyObject>() => Object.create(null) as T
 
@@ -31,20 +23,21 @@ function keysOf<T extends object>(object: T) {
 }
 
 function snakeCase(key: anyKey) {
-  return underscore(key as string)
+  return underscore(String(key))
 }
 
 function camelCase(key: anyKey) {
-  return camelize(key as string, true)
+  return camelize(String(key), true)
 }
 
-function titleCase(key: anyKey) {
-  return titleize(key as string)
+function kebabCase(key: anyKey) {
+  return dasherize(String(key))
 }
 
 export {
   New,
   assign,
+  object,
   defineProperty,
   setPrototypeOf,
   hasOwnProperty,
@@ -53,12 +46,8 @@ export {
   entriesOf,
   snakeCase,
   camelCase,
-  titleCase,
+  kebabCase,
   pluralize,
-}
-
-export function zodObjectFrom<A extends Attributes>(attributes: A) {
-  return object(mapValues(attributes, 'type') as ZodShapeFrom<A>)
 }
 
 export function attr<Z extends ZodSchema>(

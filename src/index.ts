@@ -1,17 +1,30 @@
-export type * from './types'
+// if (typeof window === 'undefined') {
+//   require('./luxon.inspect.custom')
+// }
+
+export { defineModel, defineModel as model, defineModelConfig } from './model'
+
+export { Issues } from './issues'
 
 export {
-  defineModel,
-  defineModelConfig,
   RecordNotFound,
   RecordNotCreated,
   RecordNotUpdated,
   RecordNotDeleted,
-} from './model'
+} from './errors'
 
-export { Issues } from './issues'
-export { transform, datetime, DateTime } from './schema'
-export { attr, snakeCase, camelCase, titleCase, pluralize } from './util'
+export { transform, datetime } from './schema'
+export {
+  attr,
+  attr as $,
+  camelCase,
+  snakeCase,
+  kebabCase,
+  pluralize,
+} from './util'
 
 export { createClient, type SupabaseClient } from '@supabase/supabase-js'
-export { z } from 'zod'
+export { DateTime } from 'luxon'
+export { z, z as zod } from 'zod'
+
+export type * from './types'

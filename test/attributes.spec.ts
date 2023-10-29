@@ -1,20 +1,25 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { defineModel, attr as $, datetime, DateTime } from '../src/model'
-import { string, date, number } from 'zod'
+import { model, z, $, datetime, transform, DateTime, Id } from '../src'
+import { Expect } from './support/util'
 
-class Subject extends defineModel({
+const {
+  string,
+  date,
+  number,
+  ZodString,
+  ZodNumber,
+  ZodDate,
+  ZodEffects,
+  ZodDefault,
+} = z
+
+class Subject extends model({
   id: $(number()),
   givenName: $(string()),
   familyName: $(string(), { column: 'last_name' }),
-  score: $(number()),
-  date: $(date(), {
-    take: (iso: string) => new Date(iso),
-    emit: (date: Date) => date?.toISOString(),
-  }),
-  dateTime: $(datetime(), {
-    take: (iso: string) => DateTime.fromISO(iso),
-    emit: (date: DateTime) => date.toUTC().toISO(),
-  }),
+  score: $(number().default(0)),
+  date: $(date(), transform.date),
+  dateTime: $(datetime(), transform.datetime),
 }) {
   get name() {
     return `${this.givenName} ${this.familyName}`
@@ -24,92 +29,164 @@ class Subject extends defineModel({
 describe('Attributes', () => {
   let subject: Subject
 
-  beforeEach(() => {
-    subject = new Subject({
-      id: 123,
-      given_name: 'Stella',
-      last_name: 'Goldbacke',
-      score: 42,
-      date: '2020-02-02T02:02:02.020Z',
-      date_time: '2020-02-02T02:02:02.020Z',
+  const isoDate = '2020-02-02T02:02:02.020Z'
+
+  const date = new Date(isoDate)
+  const dateTime = DateTime.fromISO(isoDate)
+
+  const attributes = Object.freeze({
+    id: 123,
+    given_name: 'Stella',
+    last_name: 'Goldbacke',
+    score: 42,
+    date: isoDate,
+    date_time: isoDate,
+  })
+
+  describe('accessors', () => {
+    beforeEach(() => {
+      subject = new Subject(attributes)
+    })
+
+    it('can get', () => {
+      expect(subject.$get('givenName')).toBe('Stella')
+      Expect<string>(subject.$get('givenName'))
+    })
+
+    it('can set', () => {
+      subject.$set('score', 99)
+      expect(subject.score).toBe(99)
+
+      Expect<(key: 'score', value: number) => void>(subject.$set<'score'>)
+    })
+
+    it('has getters', () => {
+      const { $id, id, givenName, familyName, score, date, dateTime } = subject
+
+      expect($id).toBe(123)
+      expect(id).toBe(123)
+      expect(givenName).toBe('Stella')
+      expect(familyName).toBe('Goldbacke')
+      expect(score).toBe(42)
+      expect(date).toEqual(new Date(isoDate))
+      expect(dateTime).toEqual(DateTime.fromISO(isoDate).toUTC())
+
+      Expect<Id>($id)
+      Expect<number>(id)
+      Expect<string>(givenName)
+      Expect<string>(familyName)
+      Expect<number>(score)
+      Expect<Date>(date)
+      Expect<DateTime>(dateTime)
+    })
+
+    it('has setters', () => {
+      subject.givenName = 'Tom'
+      subject.familyName = 'Unfried'
+      subject.score = 23
+      subject.date = date
+      subject.dateTime = dateTime
+
+      expect(subject.$attributes).toEqual({
+        id: 123,
+        given_name: 'Tom',
+        last_name: 'Unfried',
+        score: 23,
+        date: date,
+        date_time: dateTime,
+      })
+
+      expect(subject.familyName).toBe('Unfried')
+      expect(subject.score).toBe(23)
+      expect(subject.date).toEqual(date)
+      expect(subject.dateTime).toEqual(dateTime)
+      expect(subject.givenName).toBe('Tom')
+    })
+
+    it('works with assign', () => {
+      Object.assign(subject, {
+        givenName: 'Tom',
+        familyName: 'Unfried',
+        score: 23,
+        date,
+        dateTime,
+      })
+
+      expect(subject.givenName).toBe('Tom')
+      expect(subject.familyName).toBe('Unfried')
+      expect(subject.score).toBe(23)
+      expect(subject.date).toEqual(date)
+      expect(subject.dateTime).toEqual(dateTime)
     })
   })
 
-  it('can get', () => {
-    expect(subject.$get('givenName')).toBe('Stella')
-  })
-
-  it('can set', () => {
-    subject.$set('givenName', 'Tom')
-    expect(subject.givenName).toBe('Tom')
-  })
-
-  it('has getters', () => {
-    expect(subject.$id).toBe(123)
-    expect(subject.id).toBe(123)
-    expect(subject.givenName).toBe('Stella')
-    expect(subject.familyName).toBe('Goldbacke')
-    expect(subject.score).toBe(42)
-    expect(subject.date).toEqual(new Date('2020-02-02T02:02:02.020Z'))
-    expect(subject.dateTime).toEqual(
-      DateTime.fromISO('2020-02-02T02:02:02.020Z'),
-    )
-  })
-
-  it('has setters', () => {
-    subject.givenName = 'Tom'
-    expect(subject.givenName).toBe('Tom')
-    subject.familyName = 'Unfried'
-    expect(subject.familyName).toBe('Unfried')
-    subject.score = 23
-    expect(subject.score).toBe(23)
-    subject.date = new Date(2000, 0, 1)
-    expect(subject.date).toEqual(new Date(2000, 0, 1))
-    subject.dateTime = DateTime.fromISO('2121-12-12T12:12:12.121Z')
-    expect(subject.dateTime).toEqual(
-      DateTime.fromISO('2121-12-12T12:12:12.121Z'),
-    )
-  })
-
-  it('works with assign', () => {
-    Object.assign(subject, {
-      givenName: 'Steffi',
-      date: new Date(2000, 0, 1),
+  describe('$take', () => {
+    beforeEach(() => {
+      subject = new Subject({})
     })
-    expect(subject.givenName).toBe('Steffi')
-    expect(subject.date).toEqual(new Date(2000, 0, 1))
-  })
 
-  it('takes dates', () => {
-    expect(subject.date).toBeInstanceOf(Date)
-  })
+    it('assigns attributes', () => {
+      subject.$take(attributes)
 
-  it('emits dates', () => {
-    expect(subject.$emit().date).toBe('2020-02-02T02:02:02.020Z')
-  })
-
-  it('takes datetimes', () => {
-    expect(subject.dateTime).toBeInstanceOf(DateTime)
-  })
-
-  it('emits datetimes', () => {
-    expect(subject.$emit().date_time).toBe('2020-02-02T02:02:02.020Z')
+      expect(subject.$attributes).toEqual({
+        id: 123,
+        given_name: 'Stella',
+        last_name: 'Goldbacke',
+        score: 42,
+        date: date,
+        date_time: DateTime.fromISO(isoDate).toUTC(),
+      })
+    })
   })
 })
 
 describe('Static attributes', () => {
-  it('maps attribute keys to column keys', () => {
-    expect(Subject.attributeToColumn.familyName).toBe('last_name')
+  it('maps attribute to column keys', () => {
+    expect(Subject.attributeToColumn).toEqual({
+      id: 'id',
+      givenName: 'given_name',
+      familyName: 'last_name',
+      score: 'score',
+      date: 'date',
+      dateTime: 'date_time',
+    })
+  })
+
+  it('maps column to attribute keys', () => {
+    expect(Subject.columnToAttribute).toEqual({
+      id: 'id',
+      given_name: 'givenName',
+      last_name: 'familyName',
+      score: 'score',
+      date: 'date',
+      date_time: 'dateTime',
+    })
   })
 
   it('transforms attributes', () => {
-    const date = '2020-02-02T20:20:20.020Z'
-    expect(Subject.transforms.date_time.emit?.(DateTime.fromISO(date))).toBe(
-      date,
-    )
+    const isoDate = '2020-02-02T20:20:20.020Z'
+    const { transforms } = Subject
+
+    const date = new Date(isoDate)
+    expect(transforms.date.emit?.(date)).toBe(isoDate)
+
+    const dateTime = DateTime.fromISO(isoDate)
+    expect(transforms.date_time.emit?.(dateTime)).toBe(isoDate)
   })
 
   it('maps attribute keys to schemas', () => {
-    expect(Subject.schema.shape.familyName._def.typeName).toBe('ZodString')
+    const { id, givenName, familyName, score, date, dateTime } =
+      Subject.schema.shape
+
+    expect(id).toBeInstanceOf(ZodNumber)
+    expect(givenName).toBeInstanceOf(ZodString)
+    expect(familyName).toBeInstanceOf(ZodString)
+    expect(date).toBeInstanceOf(ZodDate)
+
+    expect(score).toBeInstanceOf(ZodDefault)
+    expect(score._def.innerType).toBeInstanceOf(ZodNumber)
+    expect(score._def.defaultValue()).toBe(0)
+
+    expect(dateTime).toBeInstanceOf(ZodEffects)
   })
 })

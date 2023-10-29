@@ -5,7 +5,7 @@ import { Database } from '../supabase/types'
 import {
   createClient,
   defineModelConfig,
-  defineModel,
+  model,
   transform,
   datetime,
   attr,
@@ -18,7 +18,7 @@ defineModelConfig({
   client: createClient<Database>(SUPABASE_URL!, SUPABASE_ANON_KEY!),
 })
 
-class Record extends defineModel({
+class Record extends model({
   id: attr(z.number()),
   firstName: attr(z.string(), { column: 'given_name' }),
   lastName: attr(z.string(), { column: 'family_name' }),

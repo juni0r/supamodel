@@ -68,11 +68,11 @@ function commandProxy(command: string[] = [], then: () => unknown) {
         return proxy
       }
     },
-  })
+  }) as string[]
   return proxy
 }
 
-function inspect(value: object | string | number | boolean) {
+function inspect(value: object | string | number | boolean): string {
   switch (typeof value) {
     case 'object':
       return Array.isArray(value)

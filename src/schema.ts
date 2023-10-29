@@ -1,7 +1,7 @@
-import type { maybe } from './types'
-import { custom } from 'zod'
+import mapValues from 'lodash.mapvalues'
+import { custom, ZodDefault, type ZodSchema, type AnyZodObject } from 'zod'
 import { DateTime } from 'luxon'
-export { DateTime }
+import type { mayBe } from './types'
 
 export const datetime = () =>
   custom<DateTime>((val: unknown) =>
@@ -10,14 +10,24 @@ export const datetime = () =>
 
 export const transform = {
   date: {
-    take: (iso: maybe<string>) => new Date(iso ?? 'invalid'),
-    emit: (date: maybe<Date>) => date?.toISOString() ?? '',
+    take: (iso: mayBe<string>) => new Date(iso ?? 'invalid'),
+    emit: (date: mayBe<Date>) => date?.toISOString() ?? '',
   },
   datetime: {
-    take: (iso: maybe<string>) =>
+    take: (iso: mayBe<string>) =>
       iso
         ? DateTime.fromISO(iso, { zone: 'utc' })
         : DateTime.invalid('empty ISO string'),
-    emit: (date: maybe<DateTime>) => date?.toUTC().toISO() ?? '',
+    emit: (date: mayBe<DateTime>) => date?.toUTC().toISO() ?? '',
   },
+}
+
+export function defaults<T>(schema: AnyZodObject): T {
+  return mapValues(schema.shape, (attr) =>
+    (attr as ZodSchema) instanceof ZodDefault
+      ? attr._def.defaultValue()
+      : attr.isNullable()
+      ? null
+      : undefined,
+  ) as T
 }

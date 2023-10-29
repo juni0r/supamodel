@@ -2,13 +2,21 @@
 import type { ZodObject, ZodSchema, TypeOf } from 'zod'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { PostgrestFilterBuilder } from '@supabase/postgrest-js'
-import type { GenericSchema } from '@supabase/supabase-js/dist/module/lib/types'
+
+import type {
+  GenericSchema,
+  GenericTable,
+  GenericView,
+} from '@supabase/supabase-js/dist/module/lib/types'
+
+import type {
+  PostgrestFilterBuilder,
+  PostgrestQueryBuilder,
+} from '@supabase/postgrest-js'
 
 import type Issues from './issues'
-export type { Issues }
 
-export function Implements<T>() {
+export function staticImplements<T>() {
   return <U extends T>(constructor: U) => {
     constructor
   }
@@ -19,7 +27,7 @@ export interface AnyObject<T = any> {
 }
 
 export type anyKey = string | number | symbol
-export type maybe<T> = T | null | undefined
+export type mayBe<T> = T | null | undefined
 
 export type Id = string | number
 
@@ -39,16 +47,15 @@ export interface ModelClass<Attrs extends Attributes = Attributes> {
   client: SupabaseClient
   attributes: Attrs
   transforms: AnyObject<Transform>
-  schema: ZodObject<ZodShapeFrom<Attrs>>
+  schema: ZodObject<ShapeFrom<Attrs>>
   primaryKey: string & keyof Attrs
   tableName: string
   naming: KeyMapper
-  attributeToColumn: KeyMap<keyof Attrs, string>
-  columnToAttribute: KeyMap<string, keyof Attrs>
+  attributeToColumn: Record<keyof Attrs, string>
+  columnToAttribute: Record<string, keyof Attrs>
+  scoped: Scoped
   find(id: Id): Promise<InstanceType<this>>
-  findAll(
-    scoped?: (scope: FilterBuilder) => FilterBuilder,
-  ): Promise<InstanceType<this>[]>
+  findAll(scoped?: Scoped): Promise<InstanceType<this>[]>
   insert(record: AnyObject): FilterBuilder
   update(id: Id, record: AnyObject): FilterBuilder
   delete(id: Id): FilterBuilder
@@ -91,8 +98,6 @@ export interface Attribute<Z extends ZodSchema = ZodSchema> {
   emit?: (value: TypeOf<Z>) => any
 }
 
-export type KeyMap<From extends anyKey = string, To = string> = Record<From, To>
-
 export interface KeyMapper {
   (key: anyKey): string
 }
@@ -113,7 +118,7 @@ export type SchemaFrom<T> = {
   [k in keyof T]: T[k] extends Attribute<any> ? TypeOf<T[k]['type']> : never
 }
 
-export type ZodShapeFrom<T> = {
+export type ShapeFrom<T> = {
   [k in keyof T]: T[k] extends Attribute<any> ? T[k]['type'] : never
 }
 
@@ -126,12 +131,22 @@ export interface Transform {
   emit: (v: any) => any
 }
 
+export interface Scoped<T = any> {
+  (scope: FilterBuilder<T>): FilterBuilder<T>
+}
+
 export type FilterBuilder<
+  Result = any,
   Schema extends GenericSchema = any,
   Row extends Record<string, unknown> = any,
-  Result = any,
   Relationships = unknown,
 > = PostgrestFilterBuilder<Schema, Row, Result, Relationships>
+
+export type QueryBuilder<
+  Schema extends GenericSchema = any,
+  Relation extends GenericTable | GenericView = any,
+  Relationships = unknown,
+> = PostgrestQueryBuilder<Schema, Relation, Relationships>
 
 export type Json =
   | string

@@ -1,5 +1,4 @@
 import type { Simplify } from 'type-fest'
-import type { PostgrestError } from '@supabase/postgrest-js'
 
 import forEach from 'lodash.foreach'
 import mapValues from 'lodash.mapvalues'
@@ -16,10 +15,10 @@ import {
   pluralize,
   snakeCase,
   hasKeyProxy,
-  zodObjectFrom,
+  object,
 } from './util'
 
-import { Implements } from './types'
+import { staticImplements } from './types'
 import type {
   Model,
   ModelClass,
@@ -29,18 +28,26 @@ import type {
   AsAttributes,
   SchemaFrom,
   Transform,
-  Changed,
-  FilterBuilder,
   AnyObject,
-  KeyMap,
+  Changed,
+  Scoped,
   Json,
   Id,
+  FilterBuilder,
+  ShapeFrom,
 } from './types'
 
-import Issues from './issues'
-import { ZodDefault, ZodSchema } from 'zod'
+import {
+  DatabaseError,
+  RecordNotCreated,
+  RecordNotDeleted,
+  RecordNotFound,
+  RecordNotUpdated,
+} from './errors'
 
-export { attr } from './util'
+import Issues from './issues'
+
+import { defaults } from './schema'
 export * from './schema'
 
 const modelOptions = New<ModelConfig>()
@@ -62,17 +69,17 @@ export function defineModel<A = Attributes>(
   type Attrs = typeof attributes
   type Schema = SchemaFrom<Attrs>
 
-  @Implements<ModelClass<Attrs>>()
+  @staticImplements<ModelClass<Attrs>>()
   class model implements Model<Attrs> {
     static client = client
     static naming = naming
 
     static attributes = attributes
-    static schema = zodObjectFrom(attributes)
-    static transforms = New<AnyObject<Transform>>()
+    static schema = object(mapValues(attributes, 'type') as ShapeFrom<Attrs>)
+    static transforms = New<Record<string, Transform>>()
 
-    static attributeToColumn = New<KeyMap<keyof Attrs, string>>()
-    static columnToAttribute = New<KeyMap<string, keyof Attrs>>()
+    static attributeToColumn = New<Record<keyof Attrs, string>>()
+    static columnToAttribute = New<Record<string, keyof Attrs>>()
 
     static get tableName() {
       const value = tableName ?? pluralize(this.naming(this.name))
@@ -89,6 +96,7 @@ export function defineModel<A = Attributes>(
     constructor(value?: AnyObject) {
       this.$commit()
       if (value) this.$take(value)
+      else this.$takeDefaults()
     }
 
     get $model() {
@@ -163,16 +171,6 @@ export function defineModel<A = Attributes>(
           this.$attributes[column] = value
         }
       })
-    }
-
-    static defaults() {
-      return mapValues(this.schema.shape, (attr) =>
-        (attr as ZodSchema) instanceof ZodDefault
-          ? attr._def.defaultValue()
-          : attr.isNullable()
-          ? null
-          : undefined,
-      )
     }
 
     $takeDefaults() {
@@ -259,16 +257,44 @@ export function defineModel<A = Attributes>(
       )
     }
 
-    static select(columns?: string) {
-      return this.client.from(this.tableName).select(columns)
+    static defaults() {
+      return defaults<Schema>(this.schema)
     }
 
-    static async findAll(scoped?: (scope: FilterBuilder) => FilterBuilder) {
-      let query = this.client.from(this.tableName).select()
+    static scoped<T = AnyObject>(filter: FilterBuilder<T>): FilterBuilder<T> {
+      return filter
+    }
 
-      if (scoped) {
-        query = scoped(query)
-      }
+    static select(columns?: string) {
+      return this.scoped(this.client.from(this.tableName).select(columns))
+    }
+
+    static insert(record: AnyObject) {
+      return this.client.from(this.tableName).insert(record)
+    }
+
+    static update(id: Id, record: AnyObject) {
+      return this.scoped(
+        this.client
+          .from(this.tableName)
+          .update(record)
+          .eq(String(this.primaryKey), id),
+      )
+    }
+
+    static delete(id: Id) {
+      return this.scoped(
+        this.client
+          .from(this.tableName)
+          .delete()
+          .eq(String(this.primaryKey), id),
+      )
+    }
+
+    static async findAll(scoped?: Scoped) {
+      let query = this.select()
+
+      if (scoped) query = scoped(query)
 
       const { error, data } = await query
       if (error) throw error
@@ -283,28 +309,10 @@ export function defineModel<A = Attributes>(
         .eq(String(this.primaryKey), id)
         .maybeSingle()
 
-      if (error) throw error
+      if (error) throw new DatabaseError(error)
       if (!data) throw new RecordNotFound(this.tableName, id)
 
       return new this(data)
-    }
-
-    static insert(record: AnyObject) {
-      return this.client.from(this.tableName).insert(record)
-    }
-
-    static update(id: Id, record: AnyObject) {
-      return this.client
-        .from(this.tableName)
-        .update(record)
-        .eq(String(this.primaryKey), id)
-    }
-
-    static delete(id: Id) {
-      return this.client
-        .from(this.tableName)
-        .delete()
-        .eq(String(this.primaryKey), id)
     }
   }
 
@@ -336,44 +344,5 @@ export function defineModel<A = Attributes>(
 
   return model as ModelClass<Attrs> & {
     new (...args: unknown[]): Simplify<model & Schema>
-  }
-}
-
-export class RecordNotFound extends Error {
-  constructor(tableName: string, id: Id) {
-    super(`No ${tableName} with primary key ${JSON.stringify(id)}`) // (1)
-    this.name = 'RecordNotFound' // (2)
-  }
-}
-
-export class DatabaseError extends Error implements PostgrestError {
-  details!: string
-  hint!: string
-  code!: string
-
-  constructor({ message, ...error }: PostgrestError) {
-    super(message) // (1)
-    assign(this, error, { name: 'DatabaseError' }) // (3)
-  }
-}
-
-export class RecordNotCreated extends DatabaseError {
-  constructor({ message, ...error }: PostgrestError) {
-    super({ message: `Record not created: ${message}`, ...error }) // (1)
-    assign(this, error, { name: 'RecordNotCreated' }) // (3)
-  }
-}
-
-export class RecordNotUpdated extends DatabaseError {
-  constructor({ message, ...error }: PostgrestError) {
-    super({ message: `Record not updated: ${message}`, ...error }) // (1)
-    assign(this, error, { name: 'RecordNotUpdated' }) // (3)
-  }
-}
-
-export class RecordNotDeleted extends DatabaseError {
-  constructor({ message, ...error }: PostgrestError) {
-    super({ message: `Record not deleted: ${message}`, ...error }) // (1)
-    assign(this, error, { name: 'RecordNotDeleted' }) // (3)
   }
 }

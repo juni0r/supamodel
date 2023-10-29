@@ -3,30 +3,31 @@ import 'dotenv/config'
 import { Database } from '../supabase/types'
 import {
   createClient,
-  defineModel,
+  model,
   defineModelConfig,
   transform,
   datetime,
-  attr,
+  $,
   z,
 } from '.'
 
+const { object, string, number, boolean } = z
 const { SUPABASE_URL, SUPABASE_ANON_KEY } = process.env
 
 defineModelConfig({
   client: createClient<Database>(SUPABASE_URL!, SUPABASE_ANON_KEY!),
 })
 
-class Record extends defineModel({
-  id: attr(z.number()),
-  firstName: attr(z.string(), { column: 'given_name' }),
-  lastName: attr(z.string(), { column: 'family_name' }),
-  email: attr(z.string().email()),
-  birthday: attr(z.string(), { column: 'date_of_birth' }),
-  score: attr(z.number().int()),
-  data: attr(z.object({}).passthrough()),
-  isOkay: attr(z.boolean()),
-  createdAt: attr(datetime(), transform.datetime),
+class Record extends model({
+  id: $(number()),
+  firstName: $(string(), { column: 'given_name' }),
+  lastName: $(string(), { column: 'family_name' }),
+  email: $(string().email()),
+  birthday: $(string(), { column: 'date_of_birth' }),
+  score: $(number().int()),
+  data: $(object({}).passthrough()),
+  isOkay: $(boolean()),
+  createdAt: $(datetime(), transform.datetime),
 }) {
   get name() {
     return `${this.firstName} ${this.lastName}`
