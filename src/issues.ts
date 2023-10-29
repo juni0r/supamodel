@@ -1,5 +1,4 @@
 import { ZodError, type ZodIssue } from 'zod'
-// import { ValidationIssues } from './types'
 
 export default class Issues extends Array<ZodIssue> {
   static from(issues: ZodIssue[]) {

@@ -14,35 +14,37 @@ export interface FnMap<K extends anyKey = string, T = any, B = Record<K, T>> {
 
 export default function fnMap<
   K extends anyKey = string,
-  T = any,
-  B = Record<K, T>,
+  V = any,
+  M = Record<K, V>,
 >() {
-  const map = Object.create(null) as B
-  const get = (key: keyof B) => map[key]
+  const map = Object.create(null) as M
+  const get = (key: keyof M) => map[key]
 
-  return new Proxy(get, {
-    get(_t: B, key: keyof B) {
-      return map[key]
+  const handler: ProxyHandler<object & M> = {
+    get(_, key) {
+      return map[key as keyof M]
     },
-    set(_t: B, key: keyof B, v: any) {
-      map[key] = v
+    set(_, key, val) {
+      map[key as keyof M] = val
       return true
     },
-    has(_t: B, key: K) {
+    has(_, key: anyKey) {
       return hasOwnProperty.call(map, key)
     },
     ownKeys() {
       return keys(map as object)
     },
-    getOwnPropertyDescriptor(_t: B, key: K) {
+    getOwnPropertyDescriptor(_, key: anyKey) {
       return getOwnPropertyDescriptor(map, key)
     },
-  } as ProxyHandler<typeof get>) as FnMap<K, T, B>
+  }
+
+  return new Proxy(get, handler as ProxyHandler<typeof get>) as FnMap<K, V, M>
 }
 
-// const map = fnMap<string, number>()
+// const map = fnMap<string, number | string>()
 
-// map.foo = 42
+// map.foo = '42'
 
 // Object.assign(map, {
 //   bar: 23,
@@ -55,7 +57,7 @@ export default function fnMap<
 // console.log(map.baz)
 // /* 99 */
 
-// console.log(map('bar') + map('foo'))
+// console.log(+map('bar') + +map('foo'))
 // /* 65 */
 
 // console.log(map('nope'))

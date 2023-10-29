@@ -5,9 +5,6 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { PostgrestFilterBuilder } from '@supabase/postgrest-js'
 import type { GenericSchema } from '@supabase/supabase-js/dist/module/lib/types'
 
-import type { FnMap, anyKey } from './fnMap'
-export type { FnMap, anyKey }
-
 import type Issues from './issues'
 export type { Issues }
 
@@ -17,11 +14,13 @@ export function Implements<T>() {
   }
 }
 
-export type Id = string | number
-
 export interface AnyObject<T = any> {
   [key: anyKey]: T
 }
+
+export type anyKey = string | number | symbol
+
+export type Id = string | number
 
 export interface ModelOptions<Db = any> extends Partial<ModelConfig<Db>> {
   tableName?: string
@@ -43,14 +42,15 @@ export interface ModelClass<Attrs extends Attributes = Attributes> {
   primaryKey: string & keyof Attrs
   tableName: string
   naming: KeyMapper
-  attributeToColumn: FnMap<keyof Attrs, string>
-  columnToAttribute: FnMap<string, keyof Attrs>
+  attributeToColumn: KeyMap<keyof Attrs, string>
+  columnToAttribute: KeyMap<string, keyof Attrs>
   find(id: Id): Promise<InstanceType<this>>
   findAll(
     scoped?: (scope: FilterBuilder) => FilterBuilder,
   ): Promise<InstanceType<this>[]>
-  insert(record: AnyObject): any
-  update(id: Id, record: AnyObject): any
+  insert(record: AnyObject): FilterBuilder
+  update(id: Id, record: AnyObject): FilterBuilder
+  delete(id: Id): FilterBuilder
 }
 
 export interface Model<
@@ -77,6 +77,7 @@ export interface Model<
   $reset(): void
   validate(): Issues
   save<C extends this>(this: C): Promise<Issues>
+  delete<C extends this>(this: C): Promise<void>
   toJSON(): ToJSON
 }
 
@@ -86,6 +87,8 @@ export interface Attribute<Z extends ZodSchema = ZodSchema> {
   take?: (value: any) => TypeOf<Z>
   emit?: (value: TypeOf<Z>) => any
 }
+
+export type KeyMap<From extends anyKey = string, To = string> = Record<From, To>
 
 export interface KeyMapper {
   (key: anyKey): string
@@ -120,12 +123,12 @@ export interface Transform {
   emit: (v: any) => any
 }
 
-export interface FilterBuilder<
+export type FilterBuilder<
   Schema extends GenericSchema = any,
   Row extends Record<string, unknown> = any,
-  Result = any[],
+  Result = any,
   Relationships = unknown,
-> extends PostgrestFilterBuilder<Schema, Row, Result, Relationships> {}
+> = PostgrestFilterBuilder<Schema, Row, Result, Relationships>
 
 export type Json =
   | string

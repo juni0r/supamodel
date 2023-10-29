@@ -37,10 +37,10 @@ import type {
   AnyObject,
   Json,
   Id,
+  KeyMap,
 } from './types'
 
 import Issues from './issues'
-import fnMap from './fnMap'
 
 export { attr } from './util'
 export * from './schema'
@@ -73,8 +73,8 @@ export function defineModel<A = Attributes>(
     static schema = zodObjectFrom(attributes)
     static transforms = New<AnyObject<Transform>>()
 
-    static attributeToColumn = fnMap<keyof Attrs, string>()
-    static columnToAttribute = fnMap<string, keyof Attrs>()
+    static attributeToColumn = New<KeyMap<keyof Attrs, string>>()
+    static columnToAttribute = New<KeyMap<string, keyof Attrs>>()
 
     static get tableName() {
       const value = tableName ?? pluralize(this.naming(this.name))
@@ -119,10 +119,11 @@ export function defineModel<A = Attributes>(
     }
 
     $reset() {
+      const { attributeToColumn } = this.$model
+
       if (this.$isDirty) {
-        const { attributeToColumn } = this.$model
         forEach(this.$dirty, (value, key) => {
-          const column = attributeToColumn(key as keyof Attrs)
+          const column = attributeToColumn[key as keyof Attrs]
           this.$attributes[column] = value
         })
       }
@@ -130,20 +131,20 @@ export function defineModel<A = Attributes>(
     }
 
     $get<K extends keyof Schema>(key: K) {
-      return this.$attributes[this.$model.attributeToColumn(key)]
+      return this.$attributes[this.$model.attributeToColumn[key]]
     }
 
     $set<K extends keyof Schema>(key: K, value: Schema[K]) {
-      const column = this.$model.attributeToColumn(key)
+      const column = this.$model.attributeToColumn[key]
 
       if (key in this.$dirty) {
         if (isEqual(value, this.$dirty[key])) {
           delete this.$dirty[key]
         }
       } else {
-        const initialValue = this.$attributes[column]
-        if (!isEqual(value, initialValue)) {
-          this.$dirty[key] = initialValue
+        const initial = this.$attributes[column]
+        if (!isEqual(value, initial)) {
+          this.$dirty[key] = initial
         }
       }
       this.$attributes[column] = value
@@ -153,7 +154,7 @@ export function defineModel<A = Attributes>(
       const { transforms, columnToAttribute } = this.$model
 
       forEach(values, (value, column) => {
-        const key = columnToAttribute(column)
+        const key = columnToAttribute[column]
 
         value = hasOwnKey(transforms, column)
           ? transforms[column].take(value)
@@ -173,7 +174,9 @@ export function defineModel<A = Attributes>(
       let emitted: AnyObject
 
       if (onlyDirty) {
-        const dirtyColumns = keysOf(this.$dirty).map(attributeToColumn)
+        const dirtyColumns = keysOf(this.$dirty).map(
+          (key) => attributeToColumn[key],
+        )
         emitted = pick(this.$attributes, dirtyColumns)
       } else {
         emitted = this.$attributes
@@ -219,14 +222,23 @@ export function defineModel<A = Attributes>(
             .eq(primaryKey as string, this.$id)
       )
         .select()
-        .single()
+        .maybeSingle()
 
-      if (error) throw new RecordNotSaved(error, this.$id)
+      if (error)
+        throw this.$isNewRecord
+          ? new RecordNotCreated(error)
+          : new RecordNotUpdated(error)
 
-      this.$reset()
+      this.$commit()
       this.$take(data)
 
       return issues
+    }
+
+    async delete() {
+      this.$reset()
+      const { error } = await this.$model.delete(this.$id)
+      if (error) throw new RecordNotDeleted(error)
     }
 
     toJSON() {
@@ -241,9 +253,13 @@ export function defineModel<A = Attributes>(
     }
 
     static async findAll(scoped?: (scope: FilterBuilder) => FilterBuilder) {
-      const query = this.client.from(this.tableName).select()
+      let query = this.client.from(this.tableName).select()
 
-      const { error, data } = await (scoped?.(query) ?? query)
+      if (scoped) {
+        query = scoped(query)
+      }
+
+      const { error, data } = await query
       if (error) throw error
 
       return data.map((record) => new this(record))
@@ -254,7 +270,7 @@ export function defineModel<A = Attributes>(
         .from(this.tableName)
         .select()
         .eq(String(this.primaryKey), id)
-        .single()
+        .maybeSingle()
 
       if (error) throw error
       if (!data) throw new RecordNotFound(this.tableName, id)
@@ -272,15 +288,23 @@ export function defineModel<A = Attributes>(
         .update(record)
         .eq(String(this.primaryKey), id)
     }
+
+    static delete(id: Id) {
+      return this.client
+        .from(this.tableName)
+        .delete()
+        .eq(String(this.primaryKey), id)
+    }
   }
 
   const { prototype, transforms, attributeToColumn, columnToAttribute } = model
 
-  forEach(attributes, (option, key) => {
+  keysOf(attributes).forEach((key) => {
+    const option = attributes[key]
     const column = (option.column ||= model.naming(key))
 
     attributeToColumn[key] = column
-    columnToAttribute[column] = key as keyof Attrs
+    columnToAttribute[column] = key
 
     if (option.take || option.emit) {
       transforms[column] = {
@@ -311,14 +335,34 @@ export class RecordNotFound extends Error {
   }
 }
 
-export class RecordNotSaved extends Error implements PostgrestError {
+export class DatabaseError extends Error implements PostgrestError {
   details: string
   hint: string
   code: string
 
-  constructor({ message, ...error }: PostgrestError, id: Id) {
-    const saved = id ? 'updated' : 'created'
-    super(`Record not ${saved} with primary key ${id} (${message})`) // (1)
-    assign(this, error, { name: 'RecordNotSaved' }) // (3)
+  constructor({ message, ...error }: PostgrestError) {
+    super(message) // (1)
+    assign(this, error, { name: 'DatabaseError' }) // (3)
+  }
+}
+
+export class RecordNotCreated extends DatabaseError {
+  constructor({ message, ...error }: PostgrestError) {
+    super({ message: `Record not created: ${message}`, ...error }) // (1)
+    assign(this, error, { name: 'RecordNotCreated' }) // (3)
+  }
+}
+
+export class RecordNotUpdated extends DatabaseError {
+  constructor({ message, ...error }: PostgrestError) {
+    super({ message: `Record not updated: ${message}`, ...error }) // (1)
+    assign(this, error, { name: 'RecordNotUpdated' }) // (3)
+  }
+}
+
+export class RecordNotDeleted extends DatabaseError {
+  constructor({ message, ...error }: PostgrestError) {
+    super({ message: `Record not deleted: ${message}`, ...error }) // (1)
+    assign(this, error, { name: 'RecordNotDeleted' }) // (3)
   }
 }
