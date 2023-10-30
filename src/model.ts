@@ -27,7 +27,7 @@ import type {
   FilterBuilder,
   Attributes,
   AsAttributes,
-  SchemaFrom,
+  SchemaOf,
   Transform,
   AnyObject,
   Changed,
@@ -66,7 +66,7 @@ export function defineModel<A = Attributes>(
     ...options,
   }
   type Attrs = typeof attributes
-  type Schema = SchemaFrom<Attrs>
+  type Schema = SchemaOf<Attrs>
 
   @staticImplements<ModelClass<Attrs>>()
   class model implements Model<Attrs> {
@@ -104,7 +104,7 @@ export function defineModel<A = Attributes>(
     }
 
     get $id() {
-      return this[model.primaryKey as keyof this] as Id
+      return this[this.$model.primaryKey as keyof this] as Id
     }
 
     get $isPersisted() {
@@ -191,8 +191,8 @@ export function defineModel<A = Attributes>(
         emitted = this.$attributes
       }
 
-      return mapValues(emitted, (value, key) =>
-        hasOwnKey(transforms, key) ? transforms[key].emit(value) : value,
+      return mapValues(emitted, (value, column) =>
+        transforms[column] ? transforms[column].emit(value) : value,
       )
     }
 

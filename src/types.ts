@@ -59,30 +59,27 @@ export interface ModelClass<Attrs extends Attributes = Attributes> {
   insert(record: AnyObject): FilterBuilder
   update(id: Id, record: AnyObject): FilterBuilder
   delete(id: Id): FilterBuilder
-  defaults(): SchemaFrom<Attrs>
+  defaults(): SchemaOf<Attrs>
 }
 
-export interface Model<
-  Attrs extends Attributes = Attributes,
-  Schema = SchemaFrom<Attrs>,
-> {
+export interface Model<Attrs extends Attributes = Attributes> {
   $model: ModelClass<Attrs>
 
   $id: Id
   $attributes: AnyObject
-  $dirty: Partial<Schema>
-  $changed: Changed<Schema>
+  $dirty: Partial<SchemaOf<Attrs>>
+  $changed: Changed<SchemaOf<Attrs>>
 
   $isDirty: boolean
   $isPersisted: boolean
   $isNewRecord: boolean
 
-  $get<K extends keyof Schema>(key: K): Schema[K]
-  $set<K extends keyof Schema>(key: K, value: Schema[K]): void
+  $get<K extends keyof Attrs>(key: K): SchemaOf<Attrs>[K]
+  $set<K extends keyof Attrs>(key: K, value: SchemaOf<Attrs>[K]): void
   $emit(options?: { onlyDirty?: boolean }): AnyObject
   $take(values: AnyObject): void
   $takeDefaults(): void
-  $parse(): Schema
+  $parse(): SchemaOf<Attrs>
   $commit(): void
   $reset(): void
   validate(): Issues
@@ -114,7 +111,7 @@ export type AsAttributes<T = any> = {
   [k in keyof T]: T[k] extends Attribute<any> ? T[k] : never
 }
 
-export type SchemaFrom<T> = {
+export type SchemaOf<T> = {
   [k in keyof T]: T[k] extends Attribute<any> ? TypeOf<T[k]['type']> : never
 }
 
