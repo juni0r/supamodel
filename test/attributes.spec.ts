@@ -56,51 +56,52 @@ describe('Attributes', () => {
     it('can set', () => {
       subject.$set('score', 99)
       expect(subject.score).toBe(99)
-
-      Expect<(key: 'score', value: number) => void>(subject.$set<'score'>)
     })
 
     it('has getters', () => {
-      const { $id, id, givenName, familyName, score, date, dateTime } = subject
+      expect(subject.$id).toBe(123)
+      expect(subject.id).toBe(123)
+      expect(subject.givenName).toBe('Stella')
+      expect(subject.familyName).toBe('Goldbacke')
+      expect(subject.score).toBe(42)
+      expect(subject.date).toEqual(new Date(isoDate))
+      expect(subject.dateTime).toEqual(DateTime.fromISO(isoDate).toUTC())
 
-      expect($id).toBe(123)
-      expect(id).toBe(123)
-      expect(givenName).toBe('Stella')
-      expect(familyName).toBe('Goldbacke')
-      expect(score).toBe(42)
-      expect(date).toEqual(new Date(isoDate))
-      expect(dateTime).toEqual(DateTime.fromISO(isoDate).toUTC())
-
-      Expect<Id>($id)
-      Expect<number>(id)
-      Expect<string>(givenName)
-      Expect<string>(familyName)
-      Expect<number>(score)
-      Expect<Date>(date)
-      Expect<DateTime>(dateTime)
+      Expect<Id>(subject.$id)
+      Expect<number>(subject.id)
+      Expect<string>(subject.givenName)
+      Expect<string>(subject.familyName)
+      Expect<number>(subject.score)
+      Expect<Date>(subject.date)
+      Expect<DateTime>(subject.dateTime)
     })
 
     it('has setters', () => {
+      const iso = '2121-12-12T12:12:12.121Z'
+
       subject.givenName = 'Tom'
       subject.familyName = 'Unfried'
       subject.score = 23
-      subject.date = date
-      subject.dateTime = dateTime
+      subject.date = new Date(iso)
+      subject.dateTime = DateTime.fromISO(iso)
 
       expect(subject.$attributes).toEqual({
         id: 123,
         given_name: 'Tom',
         last_name: 'Unfried',
         score: 23,
-        date: date,
-        date_time: dateTime,
+        date: new Date(iso),
+        date_time: DateTime.fromISO(iso),
       })
 
-      expect(subject.familyName).toBe('Unfried')
-      expect(subject.score).toBe(23)
-      expect(subject.date).toEqual(date)
-      expect(subject.dateTime).toEqual(dateTime)
-      expect(subject.givenName).toBe('Tom')
+      const { $set } = subject
+
+      Expect<(key: 'id', value: number) => void>($set)
+      Expect<(key: 'givenName', value: string) => void>($set)
+      Expect<(key: 'familyName', value: string) => void>($set)
+      Expect<(key: 'score', value: number) => void>($set)
+      Expect<(key: 'date', value: Date) => void>($set)
+      Expect<(key: 'dateTime', value: DateTime) => void>($set)
     })
 
     it('works with assign', () => {
@@ -164,8 +165,9 @@ describe('Static attributes', () => {
   })
 
   it('transforms attributes', () => {
-    const isoDate = '2020-02-02T20:20:20.020Z'
     const { transforms } = Subject
+
+    const isoDate = '2020-02-02T20:20:20.020Z'
 
     const date = new Date(isoDate)
     expect(transforms.date.emit?.(date)).toBe(isoDate)
@@ -175,18 +177,17 @@ describe('Static attributes', () => {
   })
 
   it('maps attribute keys to schemas', () => {
-    const { id, givenName, familyName, score, date, dateTime } =
-      Subject.schema.shape
+    const { shape } = Subject.schema
 
-    expect(id).toBeInstanceOf(ZodNumber)
-    expect(givenName).toBeInstanceOf(ZodString)
-    expect(familyName).toBeInstanceOf(ZodString)
-    expect(date).toBeInstanceOf(ZodDate)
+    expect(shape.id).toBeInstanceOf(ZodNumber)
+    expect(shape.givenName).toBeInstanceOf(ZodString)
+    expect(shape.familyName).toBeInstanceOf(ZodString)
+    expect(shape.date).toBeInstanceOf(ZodDate)
 
-    expect(score).toBeInstanceOf(ZodDefault)
-    expect(score._def.innerType).toBeInstanceOf(ZodNumber)
-    expect(score._def.defaultValue()).toBe(0)
+    expect(shape.score).toBeInstanceOf(ZodDefault)
+    expect(shape.score._def.innerType).toBeInstanceOf(ZodNumber)
+    expect(shape.score._def.defaultValue()).toBe(0)
 
-    expect(dateTime).toBeInstanceOf(ZodEffects)
+    expect(shape.dateTime).toBeInstanceOf(ZodEffects)
   })
 })
