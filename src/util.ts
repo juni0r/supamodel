@@ -1,7 +1,15 @@
 import { object, type ZodSchema } from 'zod'
 import { underscore, camelize, dasherize, pluralize } from 'inflection'
 
-import type { anyKey, AnyObject, Attribute } from './types'
+import mapValues from 'lodash.mapvalues'
+
+import type {
+  anyKey,
+  AnyObject,
+  Attribute,
+  Attributes,
+  ShapeFrom,
+} from './types'
 
 const New = <T extends AnyObject = AnyObject>() => Object.create(null) as T
 
@@ -37,7 +45,6 @@ function kebabCase(key: anyKey) {
 export {
   New,
   assign,
-  object,
   defineProperty,
   setPrototypeOf,
   hasOwnProperty,
@@ -48,6 +55,10 @@ export {
   camelCase,
   kebabCase,
   pluralize,
+}
+
+export function schemaFrom<A extends Attributes>(attributes: A) {
+  return object(mapValues(attributes, 'type') as ShapeFrom<A>)
 }
 
 export function attr<Z extends ZodSchema>(

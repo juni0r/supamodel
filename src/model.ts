@@ -15,7 +15,7 @@ import {
   pluralize,
   snakeCase,
   hasKeyProxy,
-  object,
+  schemaFrom,
 } from './util'
 
 import { staticImplements } from './types'
@@ -24,6 +24,7 @@ import type {
   ModelClass,
   ModelConfig,
   ModelOptions,
+  FilterBuilder,
   Attributes,
   AsAttributes,
   SchemaFrom,
@@ -33,15 +34,13 @@ import type {
   Scoped,
   Json,
   Id,
-  FilterBuilder,
-  ShapeFrom,
 } from './types'
 
 import {
   DatabaseError,
+  RecordNotFound,
   RecordNotCreated,
   RecordNotDeleted,
-  RecordNotFound,
   RecordNotUpdated,
 } from './errors'
 
@@ -75,7 +74,8 @@ export function defineModel<A = Attributes>(
     static naming = naming
 
     static attributes = attributes
-    static schema = object(mapValues(attributes, 'type') as ShapeFrom<Attrs>)
+
+    static schema = schemaFrom(attributes)
     static transforms = New<Record<string, Transform>>()
 
     static attributeToColumn = New<Record<keyof Attrs, string>>()
@@ -316,14 +316,14 @@ export function defineModel<A = Attributes>(
     }
   }
 
-  const { prototype, transforms, attributeToColumn, columnToAttribute } = model
+  const { transforms, attributeToColumn, columnToAttribute } = model
 
-  keysOf(attributes).forEach((key) => {
-    const option = attributes[key]
-    const column = (option.column ||= model.naming(key))
+  keysOf(attributes).forEach((attr) => {
+    const option = attributes[attr]
+    const column = (option.column ||= model.naming(attr))
 
-    attributeToColumn[key] = column
-    columnToAttribute[column] = key
+    attributeToColumn[attr] = column
+    columnToAttribute[column] = attr
 
     if (option.take || option.emit) {
       transforms[column] = {
@@ -332,12 +332,12 @@ export function defineModel<A = Attributes>(
       }
     }
 
-    return defineProperty(prototype, key, {
+    defineProperty(model.prototype, attr, {
       get() {
-        return this.$get(key)
+        return this.$get(attr)
       },
       set(value: unknown) {
-        this.$set(key, value)
+        this.$set(attr, value)
       },
     })
   })
