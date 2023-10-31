@@ -22,14 +22,29 @@ export type mayBe<T> = T | null | undefined
 
 export type ID = string | number
 
-export interface ModelOptions<Db = any> extends Partial<ModelConfig<Db>> {
-  tableName?: string
+interface SupabaseConfig {
+  url: string
+  anonKey: string
+  serviceKey?: string
 }
 
-export interface ModelConfig<Db = any> {
+interface Clients<Db = any> {
   client: SupabaseClient<Db>
+  serviceClient?: SupabaseClient<Db>
+}
+
+export type ModelConfig<Db = any> = (
+  | { supabase: SupabaseConfig }
+  | Clients<Db>
+) & {
   primaryKey?: string
   naming?: KeyMapper
+}
+
+export interface ModelOptions<Db = any> extends Partial<Clients<Db>> {
+  naming?: KeyMapper
+  tableName?: string
+  primaryKey?: string
 }
 
 export type Attributes = Record<string, Attribute>

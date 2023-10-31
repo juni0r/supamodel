@@ -11,10 +11,16 @@ import type {
   ShapeOf,
 } from './types'
 
-const New = <T extends AnyObject = AnyObject>() => Object.create(null) as T
+// const New = <T extends AnyObject = AnyObject>() => Object.create(null) as T
+
+// type Dict<T> = Record<string, T>
+// const Dict = <T>() => New<Dict<T>>()
+
+const New = <T extends AnyObject = AnyObject>(...defaults: AnyObject[]) =>
+  Object.assign(Object.create(null), ...defaults) as T
 
 type Dict<T> = Record<string, T>
-const Dict = <T>() => New<Dict<T>>()
+const Dict = <T>(...defaults: Dict<T>[]) => New<Dict<T>>(...defaults)
 
 const {
   keys,

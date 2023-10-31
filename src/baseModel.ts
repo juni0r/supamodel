@@ -10,6 +10,7 @@ import {
   RecordNotFound,
   RecordNotUpdated,
 } from './errors'
+
 import forEach from 'lodash.foreach'
 import mapValues from 'lodash.mapvalues'
 
@@ -19,27 +20,29 @@ import type {
   KeyMapper,
   Transform,
   ZodSchemaOf,
-  ID,
-  Json,
   FilterBuilder,
   Scoped,
+  ToJSON,
+  ID,
 } from './types'
 
 export class BaseModel {
   static client: SupabaseClient
+  static serviceClient: SupabaseClient
+
   static attributes: Attributes
-  static schema: ZodSchemaOf<Attributes>
   static transforms: Record<string, Transform>
+  static schema: ZodSchemaOf<Attributes>
   static naming: KeyMapper
-  // static tableName: string
+
+  static columnNameOf: Record<string, string>
+  static attributeNameOf: Record<string, string>
+
   static primaryKey: string
-  static attributeToColumn: Record<string, string>
-  static columnToAttribute: Record<string, string>
 
   static get tableName() {
     return (this.tableName = pluralize(this.naming(this.name)))
   }
-
   static set tableName(value: string) {
     Object.defineProperty(this, 'tableName', { value, enumerable: true })
   }
@@ -62,37 +65,30 @@ export class BaseModel {
     return this.$id === undefined
   }
 
-  $get(key: string) {
-    return this.$attributes[this.$model.attributeToColumn[key]]
+  $get(attr: string) {
+    return this.$attributes[this.$model.columnNameOf[attr]]
   }
 
-  $set(key: string, value: unknown) {
-    this.$attributes[this.$model.attributeToColumn[key]] = value
+  $set(attr: string, value: unknown) {
+    this.$attributes[this.$model.columnNameOf[attr]] = value
   }
 
   $take<T extends BaseModel>(this: T, values: AnyObject) {
-    const { transforms, columnToAttribute } = this.$model
-
-    forEach(values as Record<string, any>, (value, column) => {
-      const key = columnToAttribute[column]
-      this.$attributes[column] = transforms[key].take(value)
-    })
+    const { transforms } = this.$model
+    forEach(
+      values,
+      (value, column) =>
+        (this.$attributes[column] = transforms[column].take(value)),
+    )
 
     return this
   }
 
   $emit() {
-    const { transforms, columnToAttribute } = this.$model
+    const { transforms } = this.$model
 
-    return Object.entries(this.$attributes).reduce(
-      (emitted, [column, value]) => {
-        const key = columnToAttribute[column]
-        return {
-          ...emitted,
-          [column]: transforms[key].emit(value),
-        }
-      },
-      {},
+    return mapValues(this.$attributes, (value, column) =>
+      transforms[column].emit(value),
     )
   }
 
@@ -108,6 +104,7 @@ export class BaseModel {
     }
     return Issues.none()
   }
+
   async save() {
     const { client, tableName, primaryKey } = this.$model
 
@@ -140,10 +137,15 @@ export class BaseModel {
     if (error) throw new RecordNotDeleted(error)
   }
 
-  toJSON() {
-    return mapValues(
-      this.$model.attributes,
-      (key) => this[key as unknown as keyof typeof this] as Json,
+  toJSON(): ToJSON {
+    const { attributeNameOf } = this.$model
+
+    return Object.entries(this.$attributes).reduce(
+      (json, [column, value]) => ({
+        ...json,
+        [attributeNameOf[column]]: value,
+      }),
+      {},
     )
   }
 

@@ -51,8 +51,8 @@ export interface ModelClass<Attrs extends Attributes = Attributes> {
   primaryKey: string & keyof Attrs
   tableName: string
   naming: KeyMapper
-  attributeToColumn: Record<anyKey, string>
-  columnToAttribute: Record<string, anyKey>
+  columnNameOf: Record<anyKey, string>
+  attributeNameOf: Record<string, anyKey>
   scoped(scope: FilterBuilder): FilterBuilder
   find(id: Id): Promise<Model<Attrs>>
   findAll(scoped?: Scoped): Promise<Model<Attrs>[]>

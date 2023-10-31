@@ -144,7 +144,7 @@ describe('Attributes', () => {
 
 describe('Static attributes', () => {
   it('maps attribute to column keys', () => {
-    expect(Subject.attributeToColumn).toEqual({
+    expect(Subject.columnNameOf).toEqual({
       id: 'id',
       givenName: 'given_name',
       familyName: 'last_name',
@@ -155,7 +155,7 @@ describe('Static attributes', () => {
   })
 
   it('maps column to attribute keys', () => {
-    expect(Subject.columnToAttribute).toEqual({
+    expect(Subject.attributeNameOf).toEqual({
       id: 'id',
       given_name: 'givenName',
       last_name: 'familyName',
@@ -174,7 +174,7 @@ describe('Static attributes', () => {
     expect(transforms.date.emit?.(date)).toBe(isoDate)
 
     const dateTime = DateTime.fromISO(isoDate)
-    expect(transforms.dateTime.emit?.(dateTime)).toBe(isoDate)
+    expect(transforms.date_time.emit?.(dateTime)).toBe(isoDate)
   })
 
   it('maps attribute keys to schemas', () => {

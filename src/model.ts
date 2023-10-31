@@ -3,15 +3,19 @@ import { Simplify } from 'type-fest'
 import { BaseModel } from './baseModel'
 import { Dict, New, snakeCase, zodSchemaOf } from './util'
 import type {
+  ModelOptions,
   ModelConfig,
   Attributes,
   Transform,
   SchemaOf,
   Extend,
-  ModelOptions,
 } from './types'
+import forEach from 'lodash.foreach'
 
-const modelOptions = New<ModelConfig>()
+const modelOptions = Object.assign(New<ModelConfig>(), {
+  naming: snakeCase,
+  primaryKey: 'id' as const,
+})
 
 export function defineModelConfig(options: ModelConfig) {
   Object.assign(modelOptions, options)
@@ -21,44 +25,42 @@ export function defineModel<Attrs extends Attributes>(
   attributes: Attrs,
   options: ModelOptions = {},
 ) {
-  const { naming, primaryKey, tableName, client } = {
-    naming: snakeCase,
-    primaryKey: 'id' as const,
+  const { naming, primaryKey, tableName, client, serviceClient } = {
     ...modelOptions,
     ...options,
   }
-  type Schema = SchemaOf<Attrs>
 
   class model extends BaseModel {
-    static client = client
     static attributes = attributes
     static schema = zodSchemaOf(attributes)
     static transforms = Dict<Transform>()
     static naming = naming
     static primaryKey = primaryKey
 
-    static attributeToColumn = Dict<string>()
-    static columnToAttribute = Dict<string>()
+    static columnNameOf = Dict<string>()
+    static attributeNameOf = Dict<string>()
   }
+
   if (tableName) model.tableName = tableName
+  if (client) model.client = client
+  if (serviceClient) model.serviceClient = serviceClient
 
-  const { transforms, attributeToColumn, columnToAttribute } = model
+  const { prototype, transforms, columnNameOf, attributeNameOf } = model
 
-  Object.keys(attributes).forEach((attr) => {
-    const option = attributes[attr]
+  forEach(attributes, (option, attr) => {
     const column = (option.column ||= model.naming(attr))
 
-    attributeToColumn[attr] = column
-    columnToAttribute[column] = attr
+    columnNameOf[attr] = column
+    attributeNameOf[column] = attr
 
     if (option.take || option.emit) {
-      transforms[attr] = {
+      transforms[column] = {
         take: option.take ?? ((v: unknown) => v),
         emit: option.emit ?? ((v: unknown) => v),
       }
     }
 
-    Object.defineProperty(model.prototype, attr, {
+    Object.defineProperty(prototype, attr, {
       get() {
         return this.$get(attr)
       },
@@ -67,6 +69,8 @@ export function defineModel<Attrs extends Attributes>(
       },
     })
   })
+
+  type Schema = SchemaOf<Attrs>
 
   return model as Extend<
     typeof model,
