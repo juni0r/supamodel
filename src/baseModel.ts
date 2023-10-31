@@ -2,7 +2,7 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import Issues from './issues'
 import { defaults } from './schema'
-import { New, pluralize } from './util'
+import { pluralize, TrackedDirty } from './util'
 import {
   DatabaseError,
   RecordNotCreated,
@@ -47,7 +47,7 @@ export class BaseModel {
     Object.defineProperty(this, 'tableName', { value, enumerable: true })
   }
 
-  $attributes = New<Record<string, any>>()
+  $attributes = TrackedDirty()
 
   get $model() {
     return this.constructor as typeof BaseModel
@@ -73,13 +73,32 @@ export class BaseModel {
     this.$attributes[this.$model.columnNameOf[attr]] = value
   }
 
+  get $isDirty() {
+    return this.$attributes.$isDirty
+  }
+
+  $didChange(attr: string) {
+    return this.$attributes.$didChange(this.$model.columnNameOf[attr])
+  }
+
+  $initial(attr: string) {
+    const column = this.$model.columnNameOf[attr]
+
+    return column in this.$attributes.$initial
+      ? this.$attributes.$initial[column]
+      : this.$attributes[column]
+  }
+
   $take<T extends BaseModel>(this: T, values: AnyObject) {
     const { transforms } = this.$model
+
     forEach(
       values,
       (value, column) =>
         (this.$attributes[column] = transforms[column].take(value)),
     )
+
+    this.$attributes.$commit()
 
     return this
   }

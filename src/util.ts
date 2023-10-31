@@ -1,7 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { object, type ZodSchema } from 'zod'
 import { underscore, camelize, dasherize, pluralize } from 'inflection'
 
 import mapValues from 'lodash.mapvalues'
+import isEqual from 'fast-deep-equal'
+
+import { trackDirty, type DirtyDecorator } from './trackDirty'
 
 import type {
   anyKey,
@@ -11,16 +15,19 @@ import type {
   ShapeOf,
 } from './types'
 
-// const New = <T extends AnyObject = AnyObject>() => Object.create(null) as T
-
-// type Dict<T> = Record<string, T>
-// const Dict = <T>() => New<Dict<T>>()
-
 const New = <T extends AnyObject = AnyObject>(...defaults: AnyObject[]) =>
   Object.assign(Object.create(null), ...defaults) as T
 
-type Dict<T> = Record<string, T>
+type Dict<T = any> = Record<string, T>
 const Dict = <T>(...defaults: Dict<T>[]) => New<Dict<T>>(...defaults)
+
+export interface DirtyDict extends DirtyDecorator<Dict> {
+  [key: string]: any
+}
+
+export function TrackedDirty() {
+  return trackDirty(Dict()) as DirtyDict
+}
 
 const {
   keys,
@@ -64,16 +71,12 @@ export function attr<Z extends ZodSchema>(
   return { type, column: '', take: identity, emit: identity, ...options }
 }
 
-export function hasKeyProxy<T extends object>(object: T) {
-  return new Proxy(object, {
-    get: (target, key) => hasOwnKey(target, key),
-  }) as Record<keyof T, boolean>
-}
-
-export { default as isEqual } from 'fast-deep-equal'
 export {
   New,
   Dict,
+  isEqual,
+  trackDirty,
+  DirtyDecorator,
   assign,
   defineProperty,
   setPrototypeOf,

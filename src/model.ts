@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Simplify } from 'type-fest'
 import { BaseModel } from './baseModel'
-import { Dict, New, snakeCase, zodSchemaOf } from './util'
+import { Dict, DirtyDecorator, New, snakeCase, zodSchemaOf } from './util'
 import type {
   ModelOptions,
   ModelConfig,
@@ -39,11 +39,13 @@ export function defineModel<Attrs extends Attributes>(
 
     static columnNameOf = Dict<string>()
     static attributeNameOf = Dict<string>()
+
+    declare $attributes: DirtyDecorator<Dict>
   }
 
-  if (tableName) model.tableName = tableName
   if (client) model.client = client
   if (serviceClient) model.serviceClient = serviceClient
+  if (tableName) model.tableName = tableName
 
   const { prototype, transforms, columnNameOf, attributeNameOf } = model
 
@@ -82,6 +84,7 @@ export function defineModel<Attrs extends Attributes>(
             $model: typeof model
             $get<K extends keyof Schema>(key: K): Schema[K]
             $set<K extends keyof Schema>(key: K, value: Schema[K]): void
+            $initial<K extends keyof Schema>(key: K): Schema[K]
           }
         > &
           Schema

@@ -10,7 +10,7 @@ class Subject extends model({
   dateTime: $(datetime(), transform.datetime),
 }) {}
 
-describe.skip('Model', () => {
+describe('Model', () => {
   let subject: Subject
 
   beforeEach(() => {
@@ -30,12 +30,12 @@ describe.skip('Model', () => {
   it('is dirty when string property is changed', () => {
     subject.name = 'Henry'
     expect(subject.$isDirty).toBe(true)
-    expect(subject.$changed.name).toBe(true)
-    expect(subject.$dirty.name).toBe('Stella')
+    expect(subject.$didChange('name')).toBe(true)
+    expect(subject.$initial('name')).toBe('Stella')
 
     subject.name = 'Stella'
     expect(subject.$isDirty).toBe(false)
-    expect(subject.$changed.name).toBe(false)
+    expect(subject.$didChange('name')).toBe(false)
   })
 
   it('is dirty when date property is changed', () => {
@@ -43,12 +43,12 @@ describe.skip('Model', () => {
 
     subject.date = new Date()
     expect(subject.$isDirty).toBe(true)
-    expect(subject.$changed.date).toBe(true)
-    expect(subject.$dirty.date).toEqual(previous)
+    expect(subject.$didChange('date')).toBe(true)
+    expect(subject.$initial('date')).toEqual(previous)
 
     subject.date = previous
     expect(subject.$isDirty).toBe(false)
-    expect(subject.$changed.date).toBe(false)
+    expect(subject.$didChange('date')).toBe(false)
   })
 
   it('is dirty when datetime property is changed', () => {
@@ -56,23 +56,23 @@ describe.skip('Model', () => {
 
     subject.dateTime = DateTime.now()
     expect(subject.$isDirty).toBe(true)
-    expect(subject.$changed.dateTime).toBe(true)
-    expect(subject.$dirty.dateTime).toEqual(previous)
+    expect(subject.$didChange('dateTime')).toBe(true)
+    expect(subject.$initial('dateTime')).toEqual(previous)
 
     subject.dateTime = previous
     expect(subject.$isDirty).toBe(false)
-    expect(subject.$changed.dateTime).toBe(false)
+    expect(subject.$didChange('dateTime')).toBe(false)
   })
 
   it('is dirty when boolean property is changed', () => {
     subject.isOkay = false
     expect(subject.$isDirty).toBe(true)
-    expect(subject.$changed.isOkay).toBe(true)
-    expect(subject.$dirty.isOkay).toEqual(true)
+    expect(subject.$didChange('isOkay')).toBe(true)
+    expect(subject.$initial('isOkay')).toEqual(true)
 
     subject.isOkay = true
     expect(subject.$isDirty).toBe(false)
-    expect(subject.$changed.isOkay).toBe(false)
+    expect(subject.$didChange('isOkay')).toBe(false)
   })
 
   it('works with assign', () => {
@@ -81,8 +81,8 @@ describe.skip('Model', () => {
       date: new Date(2000, 0, 1),
     })
 
-    expect(subject.$changed.name).toBe(true)
-    expect(subject.$changed.date).toBe(true)
+    expect(subject.$didChange('name')).toBe(true)
+    expect(subject.$didChange('date')).toBe(true)
 
     expect(subject.name).toBe('Steffi')
     expect(subject.date).toEqual(new Date(2000, 0, 1))

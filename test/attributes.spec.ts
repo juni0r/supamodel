@@ -32,7 +32,7 @@ describe('Attributes', () => {
   const isoDate = '2020-02-02T02:02:02.020Z'
 
   const date = new Date(isoDate)
-  const dateTime = DateTime.fromISO(isoDate)
+  const dateTime = DateTime.fromISO(isoDate).toUTC()
 
   const attributes = Object.freeze({
     id: 123,
