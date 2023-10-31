@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Simplify } from 'type-fest'
+import { BaseModel } from './baseModel'
+import { Dict, New, snakeCase, zodSchemaOf } from './util'
 import type {
   ModelConfig,
   Attributes,
@@ -7,9 +9,7 @@ import type {
   SchemaOf,
   Extend,
   ModelOptions,
-} from './baseTypes'
-import { BaseModel } from './baseModel'
-import { New, keysOf, snakeCase, zodSchemaOf } from './util'
+} from './types'
 
 const modelOptions = New<ModelConfig>()
 
@@ -33,18 +33,18 @@ export function defineModel<Attrs extends Attributes>(
     static client = client
     static attributes = attributes
     static schema = zodSchemaOf(attributes)
-    static transforms = New<Record<string, Transform>>()
+    static transforms = Dict<Transform>()
     static naming = naming
-    static tableName = tableName!
     static primaryKey = primaryKey
 
-    static attributeToColumn = New<Record<keyof Attrs, string>>()
-    static columnToAttribute = New<Record<string, keyof Attrs>>()
+    static attributeToColumn = Dict<string>()
+    static columnToAttribute = Dict<string>()
   }
+  if (tableName) model.tableName = tableName
 
   const { transforms, attributeToColumn, columnToAttribute } = model
 
-  keysOf(attributes).forEach((attr) => {
+  Object.keys(attributes).forEach((attr) => {
     const option = attributes[attr]
     const column = (option.column ||= model.naming(attr))
 
@@ -52,7 +52,7 @@ export function defineModel<Attrs extends Attributes>(
     columnToAttribute[column] = attr
 
     if (option.take || option.emit) {
-      transforms[column] = {
+      transforms[attr] = {
         take: option.take ?? ((v: unknown) => v),
         emit: option.emit ?? ((v: unknown) => v),
       }
@@ -75,6 +75,7 @@ export function defineModel<Attrs extends Attributes>(
         Extend<
           model,
           {
+            $model: typeof model
             $get<K extends keyof Schema>(key: K): Schema[K]
             $set<K extends keyof Schema>(key: K, value: Schema[K]): void
           }

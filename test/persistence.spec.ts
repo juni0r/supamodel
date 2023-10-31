@@ -19,7 +19,7 @@ describe('Model', () => {
   let record: Record
 
   beforeEach(() => {
-    record = new Record({
+    record = new Record().$take({
       id: 123,
       name: 'Stella',
       z_index: 23,
@@ -37,12 +37,13 @@ describe('Model', () => {
     record.layer = 42
     record.date = new Date('2121-12-12T12:12:12.121Z')
 
-    client.on(/records update/, () => ({
+    client.on(/^from records update/, () => ({
       data: { name: 'name_returned' },
     }))
 
     const issues = await record.save()
 
+    console.log(issues)
     expect(issues.any).toBeFalsy()
     expect(record.name).toBe('name_returned')
   })

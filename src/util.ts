@@ -9,9 +9,12 @@ import type {
   Attributes,
   AttributeOptions,
   ShapeOf,
-} from './baseTypes'
+} from './types'
 
 const New = <T extends AnyObject = AnyObject>() => Object.create(null) as T
+
+type Dict<T> = Record<string, T>
+const Dict = <T>() => New<Dict<T>>()
 
 const {
   keys,
@@ -64,6 +67,7 @@ export function hasKeyProxy<T extends object>(object: T) {
 export { default as isEqual } from 'fast-deep-equal'
 export {
   New,
+  Dict,
   assign,
   defineProperty,
   setPrototypeOf,

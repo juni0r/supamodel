@@ -56,11 +56,12 @@ class CommandHook {
 const { push } = Array.prototype
 
 function commandProxy(command: string[] = [], then: () => unknown) {
-  // console.log(...command)
   const proxy = new Proxy(command, {
     get(target, key) {
-      if (key === 'then')
+      if (key === 'then') {
+        // console.log('CMD', target)
         return (cb: (val: unknown) => unknown) => cb(Promise.resolve(then()))
+      }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (...args: any[]) => {

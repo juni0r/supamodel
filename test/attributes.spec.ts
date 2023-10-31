@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { model, $, z, datetime, transform, DateTime, Id } from '../src'
+import { model, $, z, datetime, transform, DateTime, ID } from '../src'
 import { Expect } from './support/util'
 
 const {
@@ -20,12 +20,6 @@ class Subject extends model({
   score: $(number().default(0)),
   date: $(date(), transform.date),
   dateTime: $(datetime(), transform.datetime),
-  // id: $(number()),
-  // givenName: $(string()),
-  // familyName: $(string(), { column: 'last_name' }),
-  // score: $(number().default(0)),
-  // date: $(date(), transform.date),
-  // dateTime: $(datetime(), transform.datetime),
 }) {
   get name() {
     return `${this.givenName} ${this.familyName}`
@@ -74,7 +68,7 @@ describe('Attributes', () => {
       expect(subject.date).toEqual(new Date(isoDate))
       expect(subject.dateTime).toEqual(DateTime.fromISO(isoDate).toUTC())
 
-      Expect<Id>()(subject.$id)
+      Expect<ID>()(subject.$id)
       Expect<number>()(subject.id)
       Expect<string>()(subject.givenName)
       Expect<string>()(subject.familyName)
@@ -180,7 +174,7 @@ describe('Static attributes', () => {
     expect(transforms.date.emit?.(date)).toBe(isoDate)
 
     const dateTime = DateTime.fromISO(isoDate)
-    expect(transforms.date_time.emit?.(dateTime)).toBe(isoDate)
+    expect(transforms.dateTime.emit?.(dateTime)).toBe(isoDate)
   })
 
   it('maps attribute keys to schemas', () => {

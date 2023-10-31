@@ -1,9 +1,9 @@
 import type { PostgrestError } from '@supabase/postgrest-js'
 import { assign } from './util'
-import type { Id } from './types'
+import type { ID } from './types'
 
 export class RecordNotFound extends Error {
-  constructor(tableName: string, id: Id) {
+  constructor(tableName: string, id: ID) {
     super(`No ${tableName} with primary key ${JSON.stringify(id)}`) // (1)
     this.name = 'RecordNotFound' // (2)
   }
