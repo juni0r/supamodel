@@ -13,7 +13,7 @@ describe('Validation', () => {
   let subject: Subject
 
   beforeEach(() => {
-    subject = new Subject({
+    subject = new Subject().$take({
       given_name: 'Stella',
       family_name: null,
       date: '2020-02-02T02:02:02.020Z',

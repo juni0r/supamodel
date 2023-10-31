@@ -3,14 +3,20 @@ import { underscore, camelize, dasherize, pluralize } from 'inflection'
 
 import mapValues from 'lodash.mapvalues'
 
-import type { anyKey, AnyObject, Attribute, Attributes, ShapeOf } from './types'
+import type {
+  anyKey,
+  AnyObject,
+  Attributes,
+  AttributeOptions,
+  ShapeOf,
+} from './baseTypes'
 
 const New = <T extends AnyObject = AnyObject>() => Object.create(null) as T
 
 const {
   keys,
   assign,
-  entries: entriesOf,
+  entries,
   defineProperty,
   setPrototypeOf,
   prototype: { hasOwnProperty },
@@ -40,11 +46,13 @@ export function zodSchemaOf<A extends Attributes>(attributes: A) {
   return object(mapValues(attributes, 'type') as ShapeOf<A>)
 }
 
+export const identity = <T>(v: T) => v
+
 export function attr<Z extends ZodSchema>(
   type: Z,
-  options?: Partial<Omit<Attribute<Z>, 'type'>>,
+  options?: AttributeOptions<Z>,
 ) {
-  return { type, column: '', ...options }
+  return { type, column: '', take: identity, emit: identity, ...options }
 }
 
 export function hasKeyProxy<T extends object>(object: T) {
@@ -62,7 +70,7 @@ export {
   hasOwnProperty,
   hasOwnKey,
   keysOf,
-  entriesOf,
+  entries as entriesOf,
   snakeCase,
   camelCase,
   kebabCase,

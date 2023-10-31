@@ -13,12 +13,6 @@ import type {
   ID,
 } from './baseTypes'
 
-// function attr<Z extends ZodSchema>(options: Z | Attribute<Z>) {
-//   return (
-//     options instanceof ZodSchema ? { type: options } : options
-//   ) as Attribute<Z>
-// }
-
 export abstract class BaseModel {
   static client: SupabaseClient
   static attributes: Attributes

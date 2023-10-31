@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { model, z, datetime, transform, DateTime, Id } from '../src'
+import { model, $, z, datetime, transform, DateTime, Id } from '../src'
 import { Expect } from './support/util'
 
 const {
@@ -14,12 +14,12 @@ const {
 } = z
 
 class Subject extends model({
-  id: { type: number(), column: 'id' },
-  givenName: { type: string(), column: 'given_name' },
-  familyName: { type: string(), column: 'last_name' },
-  score: { type: number().default(0), column: 'score' },
-  date: { type: date(), column: 'date', ...transform.date },
-  dateTime: { type: datetime(), column: 'date_time', ...transform.datetime },
+  id: $(number()),
+  givenName: $(string()),
+  familyName: $(string(), { column: 'last_name' }),
+  score: $(number().default(0)),
+  date: $(date(), transform.date),
+  dateTime: $(datetime(), transform.datetime),
   // id: $(number()),
   // givenName: $(string()),
   // familyName: $(string(), { column: 'last_name' }),

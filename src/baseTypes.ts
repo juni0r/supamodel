@@ -30,8 +30,8 @@ export interface Attributes {
 export interface Attribute<Z extends ZodSchema = any> {
   type: Z
   column: string
-  take?: (value: any) => TypeOf<Z>
-  emit?: (value: TypeOf<Z>) => any
+  take: (value: any) => TypeOf<Z>
+  emit: (value: TypeOf<Z>) => any
 }
 
 export type AttributeOptions<Z extends ZodSchema> = Partial<
