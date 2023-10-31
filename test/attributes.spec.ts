@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { model, z, $, datetime, transform, DateTime, Id } from '../src'
+import { model, z, datetime, transform, DateTime, Id } from '../src'
 import { Expect } from './support/util'
 
 const {
@@ -14,12 +14,18 @@ const {
 } = z
 
 class Subject extends model({
-  id: $(number()),
-  givenName: $(string()),
-  familyName: $(string(), { column: 'last_name' }),
-  score: $(number().default(0)),
-  date: $(date(), transform.date),
-  dateTime: $(datetime(), transform.datetime),
+  id: { type: number(), column: 'id' },
+  givenName: { type: string(), column: 'given_name' },
+  familyName: { type: string(), column: 'last_name' },
+  score: { type: number().default(0), column: 'score' },
+  date: { type: date(), column: 'date', ...transform.date },
+  dateTime: { type: datetime(), column: 'date_time', ...transform.datetime },
+  // id: $(number()),
+  // givenName: $(string()),
+  // familyName: $(string(), { column: 'last_name' }),
+  // score: $(number().default(0)),
+  // date: $(date(), transform.date),
+  // dateTime: $(datetime(), transform.datetime),
 }) {
   get name() {
     return `${this.givenName} ${this.familyName}`
@@ -45,12 +51,13 @@ describe('Attributes', () => {
 
   describe('accessors', () => {
     beforeEach(() => {
-      subject = new Subject(attributes)
+      subject = new Subject().$take(attributes)
     })
 
     it('can get', () => {
       expect(subject.$get('givenName')).toBe('Stella')
-      Expect<string>(subject.$get('givenName'))
+
+      Expect<string>()(subject.$get('givenName'))
     })
 
     it('can set', () => {
@@ -67,13 +74,13 @@ describe('Attributes', () => {
       expect(subject.date).toEqual(new Date(isoDate))
       expect(subject.dateTime).toEqual(DateTime.fromISO(isoDate).toUTC())
 
-      Expect<Id>(subject.$id)
-      Expect<number>(subject.id)
-      Expect<string>(subject.givenName)
-      Expect<string>(subject.familyName)
-      Expect<number>(subject.score)
-      Expect<Date>(subject.date)
-      Expect<DateTime>(subject.dateTime)
+      Expect<Id>()(subject.$id)
+      Expect<number>()(subject.id)
+      Expect<string>()(subject.givenName)
+      Expect<string>()(subject.familyName)
+      Expect<number>()(subject.score)
+      Expect<Date>()(subject.date)
+      Expect<DateTime>()(subject.dateTime)
     })
 
     it('has setters', () => {
@@ -96,12 +103,12 @@ describe('Attributes', () => {
 
       const { $set } = subject
 
-      Expect<(key: 'id', value: number) => void>($set)
-      Expect<(key: 'givenName', value: string) => void>($set)
-      Expect<(key: 'familyName', value: string) => void>($set)
-      Expect<(key: 'score', value: number) => void>($set)
-      Expect<(key: 'date', value: Date) => void>($set)
-      Expect<(key: 'dateTime', value: DateTime) => void>($set)
+      Expect<(key: 'id', value: number) => void>()($set<'id'>)
+      Expect<(key: 'givenName', value: string) => void>()($set<'givenName'>)
+      Expect<(key: 'familyName', value: string) => void>()($set<'familyName'>)
+      Expect<(key: 'score', value: number) => void>()($set<'score'>)
+      Expect<(key: 'date', value: Date) => void>()($set<'date'>)
+      Expect<(key: 'dateTime', value: DateTime) => void>()($set<'dateTime'>)
     })
 
     it('works with assign', () => {

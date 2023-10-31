@@ -1,6 +1,11 @@
 {
   "vitest.enable": true,
   "editor.tokenColorCustomizations": {
+    "[Nord Deep]": {
+      "comments": "#647279",
+      "numbers": "#d1c88f",
+      "variables": "#bcd5c0"
+    },
     "comments": "#647279",
     "textMateRules": []
   }

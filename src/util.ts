@@ -3,13 +3,7 @@ import { underscore, camelize, dasherize, pluralize } from 'inflection'
 
 import mapValues from 'lodash.mapvalues'
 
-import type {
-  anyKey,
-  AnyObject,
-  Attribute,
-  Attributes,
-  ShapeFrom,
-} from './types'
+import type { anyKey, AnyObject, Attribute, Attributes, ShapeOf } from './types'
 
 const New = <T extends AnyObject = AnyObject>() => Object.create(null) as T
 
@@ -42,23 +36,8 @@ function kebabCase(key: anyKey) {
   return dasherize(String(key))
 }
 
-export {
-  New,
-  assign,
-  defineProperty,
-  setPrototypeOf,
-  hasOwnProperty,
-  hasOwnKey,
-  keysOf,
-  entriesOf,
-  snakeCase,
-  camelCase,
-  kebabCase,
-  pluralize,
-}
-
-export function schemaFrom<A extends Attributes>(attributes: A) {
-  return object(mapValues(attributes, 'type') as ShapeFrom<A>)
+export function zodSchemaOf<A extends Attributes>(attributes: A) {
+  return object(mapValues(attributes, 'type') as ShapeOf<A>)
 }
 
 export function attr<Z extends ZodSchema>(
@@ -72,4 +51,20 @@ export function hasKeyProxy<T extends object>(object: T) {
   return new Proxy(object, {
     get: (target, key) => hasOwnKey(target, key),
   }) as Record<keyof T, boolean>
+}
+
+export { default as isEqual } from 'fast-deep-equal'
+export {
+  New,
+  assign,
+  defineProperty,
+  setPrototypeOf,
+  hasOwnProperty,
+  hasOwnKey,
+  keysOf,
+  entriesOf,
+  snakeCase,
+  camelCase,
+  kebabCase,
+  pluralize,
 }

@@ -45,17 +45,17 @@ export interface ModelClass<Attrs extends Attributes = Attributes> {
   new (...args: any[]): Model<Attrs>
 
   client: SupabaseClient
-  attributes: Attrs
+  attributes: Attributes
   transforms: AnyObject<Transform>
-  schema: ZodObject<ShapeFrom<Attrs>>
+  schema: ZodObject<ShapeOf<Attrs>>
   primaryKey: string & keyof Attrs
   tableName: string
   naming: KeyMapper
-  attributeToColumn: Record<keyof Attrs, string>
-  columnToAttribute: Record<string, keyof Attrs>
-  scoped: Scoped
-  find(id: Id): Promise<InstanceType<this>>
-  findAll(scoped?: Scoped): Promise<InstanceType<this>[]>
+  attributeToColumn: Record<anyKey, string>
+  columnToAttribute: Record<string, anyKey>
+  scoped(scope: FilterBuilder): FilterBuilder
+  find(id: Id): Promise<Model<Attrs>>
+  findAll(scoped?: Scoped): Promise<Model<Attrs>[]>
   insert(record: AnyObject): FilterBuilder
   update(id: Id, record: AnyObject): FilterBuilder
   delete(id: Id): FilterBuilder
@@ -74,8 +74,8 @@ export interface Model<Attrs extends Attributes = Attributes> {
   $isPersisted: boolean
   $isNewRecord: boolean
 
-  $get<K extends keyof Attrs>(key: K): SchemaOf<Attrs>[K]
-  $set<K extends keyof Attrs>(key: K, value: SchemaOf<Attrs>[K]): void
+  $get<K extends keyof anyKey>(key: K): SchemaOf<Attrs>[K]
+  $set<K extends keyof anyKey>(key: K, value: SchemaOf<Attrs>[K]): void
   $emit(options?: { onlyDirty?: boolean }): AnyObject
   $take(values: AnyObject): void
   $takeDefaults(): void
@@ -95,10 +95,6 @@ export interface Attribute<Z extends ZodSchema = ZodSchema> {
   emit?: (value: TypeOf<Z>) => any
 }
 
-export interface KeyMapper {
-  (key: anyKey): string
-}
-
 export interface Attributes {
   [key: string]: Attribute
 }
@@ -115,12 +111,16 @@ export type SchemaOf<T> = {
   [k in keyof T]: T[k] extends Attribute<any> ? TypeOf<T[k]['type']> : never
 }
 
-export type ShapeFrom<T> = {
+export type ShapeOf<T> = {
   [k in keyof T]: T[k] extends Attribute<any> ? T[k]['type'] : never
 }
 
 export type Changed<T> = {
   [k in keyof T]: boolean
+}
+
+export interface KeyMapper {
+  (key: anyKey): string
 }
 
 export interface Transform {
