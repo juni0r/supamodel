@@ -1,6 +1,7 @@
-import type { PostgrestError } from '@supabase/postgrest-js'
-import { assign } from './util'
 import type { ID } from './types'
+import type { PostgrestError } from '@supabase/postgrest-js'
+
+const { assign } = Object
 
 export class RecordNotFound extends Error {
   constructor(tableName: string, id: ID) {

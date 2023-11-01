@@ -2,8 +2,8 @@
 import { object, type ZodSchema } from 'zod'
 import { underscore, camelize, dasherize, pluralize } from 'inflection'
 
+export { default as isEqual } from 'fast-deep-equal'
 import mapValues from 'lodash.mapvalues'
-import isEqual from 'fast-deep-equal'
 
 import { trackDirty, type DirtyDecorator } from './trackDirty'
 
@@ -13,6 +13,7 @@ import type {
   Attributes,
   AttributeOptions,
   ShapeOf,
+  Attribute,
 } from './types'
 
 const New = <T extends AnyObject = AnyObject>(...defaults: AnyObject[]) =>
@@ -29,21 +30,8 @@ export function TrackedDirty() {
   return trackDirty(Dict()) as DirtyDict
 }
 
-const {
-  keys,
-  assign,
-  entries,
-  defineProperty,
-  setPrototypeOf,
-  prototype: { hasOwnProperty },
-} = Object
-
-function hasOwnKey(object: object, key: anyKey) {
-  return hasOwnProperty.call(object, key)
-}
-
 function keysOf<T extends object>(object: T) {
-  return keys(object) as (keyof T)[]
+  return Object.keys(object) as (keyof T)[]
 }
 
 function snakeCase(key: anyKey) {
@@ -68,22 +56,15 @@ export function attr<Z extends ZodSchema>(
   type: Z,
   options?: AttributeOptions<Z>,
 ) {
-  return { type, column: '', take: identity, emit: identity, ...options }
+  return { type, ...options } as Attribute<Z>
 }
 
 export {
   New,
   Dict,
-  isEqual,
   trackDirty,
   DirtyDecorator,
-  assign,
-  defineProperty,
-  setPrototypeOf,
-  hasOwnProperty,
-  hasOwnKey,
   keysOf,
-  entries as entriesOf,
   snakeCase,
   camelCase,
   kebabCase,

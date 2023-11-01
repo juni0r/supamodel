@@ -1,10 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import isEmpty from 'lodash.isempty'
 import type { AnyObject } from './types'
 import { New, isEqual } from './util'
+import mapValues from 'lodash.mapvalues'
 
 export interface DirtyDecorator<T extends AnyObject = AnyObject> {
   $initial: Partial<T>
+  $changes: Partial<T>
   $isDirty: boolean
   $didChange(key: keyof T): boolean
   $commit(): void
@@ -27,11 +28,14 @@ export function trackDirty<T extends AnyObject>(object: T) {
     get $initial() {
       return $initial
     },
+    get $isDirty() {
+      return !isEmpty($initial)
+    },
     $didChange(prop: keyof T) {
       return prop in $initial
     },
-    get $isDirty() {
-      return !isEmpty($initial)
+    get $changes() {
+      return mapValues($initial, (_, prop) => object[prop])
     },
     $commit,
     $revert,

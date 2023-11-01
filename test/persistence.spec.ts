@@ -43,7 +43,7 @@ describe('Model', () => {
 
     const issues = await record.save()
 
-    console.log(issues)
+    // console.log(issues)
     expect(issues.any).toBeFalsy()
     expect(record.name).toBe('name_returned')
   })

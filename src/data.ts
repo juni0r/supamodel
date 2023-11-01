@@ -41,7 +41,12 @@ Record.findAll((where) =>
     .eq('is_okay', false),
 )
   .then((records) => {
-    console.log(records.map((record) => record.toJSON()))
+    console.log(records)
+    // console.log(records.map((record) => record.toJSON()))
+    // records.forEach((record) => {
+    //   console.log(JSON.stringify(record.$emit(), null, 2))
+    //   // console.log(JSON.stringify(record.toJSON(), null, 2)),
+    // })
   })
   .catch(console.error)
 

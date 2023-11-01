@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Simplify } from 'type-fest'
 import { BaseModel } from './baseModel'
-import { Dict, DirtyDecorator, New, snakeCase, zodSchemaOf } from './util'
+import { Dict, New, identity, snakeCase, zodSchemaOf } from './util'
 import type {
   ModelOptions,
   ModelConfig,
@@ -39,8 +38,6 @@ export function defineModel<Attrs extends Attributes>(
 
     static columnNameOf = Dict<string>()
     static attributeNameOf = Dict<string>()
-
-    declare $attributes: DirtyDecorator<Dict>
   }
 
   if (client) model.client = client
@@ -55,12 +52,8 @@ export function defineModel<Attrs extends Attributes>(
     columnNameOf[attr] = column
     attributeNameOf[column] = attr
 
-    if (option.take || option.emit) {
-      transforms[column] = {
-        take: option.take ?? ((v: unknown) => v),
-        emit: option.emit ?? ((v: unknown) => v),
-      }
-    }
+    const { take = identity, emit = identity } = option
+    transforms[column] = { take, emit }
 
     Object.defineProperty(prototype, attr, {
       get() {
@@ -77,7 +70,7 @@ export function defineModel<Attrs extends Attributes>(
   return model as Extend<
     typeof model,
     {
-      new (...args: any): Simplify<
+      new (...args: any): Schema &
         Extend<
           model,
           {
@@ -85,10 +78,9 @@ export function defineModel<Attrs extends Attributes>(
             $get<K extends keyof Schema>(key: K): Schema[K]
             $set<K extends keyof Schema>(key: K, value: Schema[K]): void
             $initial<K extends keyof Schema>(key: K): Schema[K]
+            $didChange<K extends keyof Schema>(key: K): boolean
           }
-        > &
-          Schema
-      >
+        >
     }
   >
 }

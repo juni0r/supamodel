@@ -92,22 +92,21 @@ export class BaseModel {
   $take<T extends BaseModel>(this: T, values: AnyObject) {
     const { transforms } = this.$model
 
-    forEach(
-      values,
-      (value, column) =>
-        (this.$attributes[column] = transforms[column].take(value)),
-    )
+    forEach(values, (value, column) => {
+      this.$attributes[column] = transforms[column].take(value)
+    })
 
     this.$attributes.$commit()
 
     return this
   }
 
-  $emit() {
+  $emit({ onlyChanges = false }: { onlyChanges?: boolean } = {}) {
     const { transforms } = this.$model
 
-    return mapValues(this.$attributes, (value, column) =>
-      transforms[column].emit(value),
+    return mapValues(
+      onlyChanges ? this.$attributes.$changes : this.$attributes,
+      (value, column) => transforms[column].emit(value),
     )
   }
 
@@ -132,7 +131,7 @@ export class BaseModel {
       return issues
     }
 
-    const record = this.$emit()
+    const record = this.$emit({ onlyChanges: true })
 
     const { error, data } = await (this.$isNewRecord
       ? client.from(tableName).insert(record)
@@ -146,6 +145,7 @@ export class BaseModel {
         ? new RecordNotCreated(error)
         : new RecordNotUpdated(error)
 
+    this.$attributes.$commit()
     this.$take(data)
 
     return issues
@@ -207,7 +207,9 @@ export class BaseModel {
     const { error, data } = await query
     if (error) throw error
 
-    return data.map((record) => new this().$take(record))
+    return data.map((record) => {
+      return new this().$take(record)
+    })
   }
 
   static async find(id: ID) {

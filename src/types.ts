@@ -11,7 +11,7 @@ import type {
   PostgrestQueryBuilder,
 } from '@supabase/postgrest-js'
 
-export type Extend<T, E> = Omit<T, keyof E> & E
+export type Extend<T, E> = E & Omit<T, keyof E>
 
 export interface AnyObject<T = any> {
   [key: anyKey]: T
