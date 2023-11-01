@@ -10,16 +10,16 @@ import type {
   PostgrestFilterBuilder,
   PostgrestQueryBuilder,
 } from '@supabase/postgrest-js'
-import BaseModel from './baseModel'
+import type BaseModel from './baseModel'
 
 export type Extend<T, E> = E & Omit<T, keyof E>
 
+export type anyKey = string | number | symbol
 export interface AnyObject<T = any> {
   [key: anyKey]: T
 }
 
-export type anyKey = string | number | symbol
-export type mayBe<T> = T | null | undefined
+export type mayBe<Type> = Type | null | undefined
 
 export type ID = string | number
 
@@ -29,18 +29,18 @@ interface SupabaseConfig {
   serviceKey?: string
 }
 
-export type ModelConfigOptions<Db = any> = {
-  base?: typeof BaseModel
-  client: SupabaseClient<Db> | SupabaseConfig
-  serviceClient?: SupabaseClient<Db>
+export type ModelConfigOptions<DB = any> = {
+  base?: typeof BaseModel<DB>
+  client: SupabaseClient<DB> | SupabaseConfig
+  serviceClient?: SupabaseClient<DB>
   primaryKey?: string
   naming?: KeyMapper
 }
 
-export interface ModelConfig<Db = any> {
-  base: typeof BaseModel
-  client: SupabaseClient<Db>
-  serviceClient?: SupabaseClient<Db>
+export interface ModelConfig<DB = any> {
+  base: typeof BaseModel<DB>
+  client: SupabaseClient<DB>
+  serviceClient?: SupabaseClient<DB>
   tableName?: string
   primaryKey: string
   naming: KeyMapper
@@ -70,7 +70,7 @@ export type ShapeOf<T> = {
 export type ZodSchemaOf<Attrs extends Attributes> = ZodObject<ShapeOf<Attrs>>
 
 export interface KeyMapper {
-  (key: anyKey): string
+  (key: string): string
 }
 
 export interface Transform {

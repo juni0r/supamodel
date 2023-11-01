@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { SupabaseClient } from '@supabase/supabase-js'
-import Issues from './issues'
 import { defaults } from './schema'
 import { pluralize, TrackedDirty } from './util'
 import {
@@ -10,6 +9,7 @@ import {
   RecordNotFound,
   RecordNotUpdated,
 } from './errors'
+import Issues from './issues'
 
 import forEach from 'lodash.foreach'
 import mapValues from 'lodash.mapvalues'
@@ -47,8 +47,8 @@ export class BaseModel<DB = any> {
     Object.defineProperty(this, 'tableName', { value, enumerable: true })
   }
 
-  static async withServiceRole<Result = unknown>(
-    this: typeof BaseModel,
+  static async withServiceRole<DB, Result = unknown>(
+    this: typeof BaseModel<DB>,
     execute: () => Result,
   ) {
     const { client } = this
@@ -141,26 +141,27 @@ export class BaseModel<DB = any> {
   }
 
   async save() {
-    const { client, tableName, primaryKey } = this.$model
-
     const issues = this.validate()
     if (issues.any) {
       return issues
     }
 
+    const { client, tableName, primaryKey } = this.$model
+
+    const table = client.from(tableName)
     const record = this.$emit({ onlyChanges: true })
 
-    const { error, data } = await (this.$isNewRecord
-      ? client.from(tableName).insert(record)
-      : client.from(tableName).update(record).eq(primaryKey, this.$id)
+    const { error, data } = await (this.$isPersisted
+      ? table.update(record).eq(primaryKey, this.$id)
+      : table.insert(record)
     )
       .select()
       .maybeSingle()
 
     if (error)
-      throw this.$isNewRecord
-        ? new RecordNotCreated(error)
-        : new RecordNotUpdated(error)
+      throw this.$isPersisted
+        ? new RecordNotUpdated(error)
+        : new RecordNotCreated(error)
 
     this.$attributes.$commit()
     this.$take(data)

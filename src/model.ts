@@ -1,49 +1,18 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import BaseModel from './baseModel'
-import { createClient, SupabaseClient } from '.'
-import { Dict, New, snakeCase } from './util'
+import config from './config'
+import { SupabaseClient } from '@supabase/supabase-js'
 import { identity, zodSchemaOf } from './schema'
+import { Dict } from './util'
 import forEach from 'lodash.foreach'
-
-const { assign, defineProperty } = Object
 
 import type {
   ModelConfig,
-  ModelConfigOptions,
   Attributes,
   Transform,
   SchemaOf,
   Extend,
 } from './types'
 
-export const config = assign(New<ModelConfig>(), {
-  base: BaseModel,
-  naming: snakeCase,
-  primaryKey: 'id' as const,
-})
-
-export function defineModelConfig<DB = any>({
-  client,
-  serviceClient,
-  ...options
-}: ModelConfigOptions<DB>) {
-  if (!(client instanceof SupabaseClient)) {
-    const { url, anonKey, serviceKey } = client
-
-    client = createClient<DB>(url, anonKey)
-
-    if (serviceKey) {
-      serviceClient = createClient<DB>(url, serviceKey)
-    }
-  }
-
-  assign(config, {
-    client,
-    serviceClient,
-    ...options,
-  })
-}
-
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function defineModel<DB = any, Attrs extends Attributes = Attributes>(
   attributes: Attrs,
   options: Partial<ModelConfig<DB>> = {},
@@ -51,11 +20,11 @@ export function defineModel<DB = any, Attrs extends Attributes = Attributes>(
   type Schema = SchemaOf<Attrs>
 
   const { naming, primaryKey, client, serviceClient, tableName } = {
-    ...config,
+    ...config(),
     ...options,
   }
 
-  class model extends config.base<DB> {
+  class model extends config<DB>().base {
     static attributes = attributes
     static schema = zodSchemaOf(attributes)
     static transforms = Dict<Transform>()
@@ -80,7 +49,7 @@ export function defineModel<DB = any, Attrs extends Attributes = Attributes>(
     const { take = identity, emit = identity } = option
     transforms[column] = { take, emit }
 
-    defineProperty(prototype, attr, {
+    Object.defineProperty(prototype, attr, {
       get() {
         return this.$get(attr)
       },
@@ -93,7 +62,7 @@ export function defineModel<DB = any, Attrs extends Attributes = Attributes>(
   return model as Extend<
     typeof model,
     {
-      new (...args: any): Schema &
+      new (...args: unknown[]): Schema &
         Extend<
           model,
           {
@@ -108,6 +77,6 @@ export function defineModel<DB = any, Attrs extends Attributes = Attributes>(
   >
 }
 
-export async function withServiceRole(execute: () => unknown) {
-  return await config.base.withServiceRole(execute)
+export async function withServiceRole<DB>(execute: () => unknown) {
+  return await config<DB>().base.withServiceRole<DB>(execute)
 }

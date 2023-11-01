@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { model, $, datetime, transform } from '../src'
+import { defineModel as model, $, datetime, transform } from '../src'
 import { string, date } from 'zod'
 
 class Subject extends model({

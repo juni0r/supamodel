@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { model, $, z, datetime, transform, DateTime, ID } from '../src'
+import { defineModel as model, $, z, datetime, transform, DateTime, ID } from '../src'
 import { Expect } from './support/util'
 
 const {

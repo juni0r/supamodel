@@ -1,28 +1,26 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import 'dotenv/config'
-
 import { Database } from '../supabase/types'
 import {
   BaseModel,
-  model,
+  defineModel,
   defineModelConfig,
+  config,
   transform,
   datetime,
   $,
   z,
   Scoped,
 } from '.'
-import { config } from './model'
 
-class Model extends BaseModel {
-  static findAll(scoped?: Scoped<any> | undefined): Promise<Model[]> {
+class AppModel extends BaseModel {
+  static findAll(scoped?: Scoped<any> | undefined): Promise<AppModel[]> {
     console.log(`Finding all ${this.tableName}...`)
     return super.findAll(scoped)
   }
 }
 
 defineModelConfig<Database>({
-  base: Model,
+  base: AppModel,
   client: {
     url: process.env.SUPABASE_URL!,
     anonKey: process.env.SUPABASE_KEY!,
@@ -32,9 +30,9 @@ defineModelConfig<Database>({
 
 const { object, string, number, boolean } = z
 
-console.log(config.base)
+console.dir(config(), { depth: 1 })
 
-class Record extends model({
+class Record extends defineModel({
   id: $(number()),
   firstName: $(string(), { column: 'given_name' }),
   lastName: $(string(), { column: 'family_name' }),

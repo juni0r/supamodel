@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { underscore, camelize, dasherize, pluralize } from 'inflection'
 import { trackDirty, type DirtyDecorator } from './trackDirty'
-import type { anyKey, AnyObject } from './types'
+import type { AnyObject, KeyMapper } from './types'
 
 export { default as isEqual } from 'fast-deep-equal'
 
@@ -31,17 +31,9 @@ export function keyzOf<T extends AnyObject>(
   return Object.keys(object).map(block)
 }
 
-function snakeCase(key: anyKey) {
-  return underscore(String(key))
-}
-
-function camelCase(key: anyKey) {
-  return camelize(String(key), true)
-}
-
-function kebabCase(key: anyKey) {
-  return dasherize(String(key))
-}
+const snakeCase: KeyMapper = (key: string) => underscore(key)
+const camelCase: KeyMapper = (key: string) => camelize(key, true)
+const kebabCase: KeyMapper = (key: string) => dasherize(key)
 
 export {
   New,
