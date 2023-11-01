@@ -1,35 +1,61 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { BaseModel } from './baseModel'
-import { Dict, New, identity, snakeCase, zodSchemaOf } from './util'
+import BaseModel from './baseModel'
+import { createClient, SupabaseClient } from '.'
+import { Dict, New, snakeCase } from './util'
+import { identity, zodSchemaOf } from './schema'
+import forEach from 'lodash.foreach'
+
+const { assign, defineProperty } = Object
+
 import type {
-  ModelOptions,
   ModelConfig,
+  ModelConfigOptions,
   Attributes,
   Transform,
   SchemaOf,
   Extend,
 } from './types'
-import forEach from 'lodash.foreach'
 
-const modelOptions = Object.assign(New<ModelConfig>(), {
+export const config = assign(New<ModelConfig>(), {
+  base: BaseModel,
   naming: snakeCase,
   primaryKey: 'id' as const,
 })
 
-export function defineModelConfig(options: ModelConfig) {
-  Object.assign(modelOptions, options)
+export function defineModelConfig<DB = any>({
+  client,
+  serviceClient,
+  ...options
+}: ModelConfigOptions<DB>) {
+  if (!(client instanceof SupabaseClient)) {
+    const { url, anonKey, serviceKey } = client
+
+    client = createClient<DB>(url, anonKey)
+
+    if (serviceKey) {
+      serviceClient = createClient<DB>(url, serviceKey)
+    }
+  }
+
+  assign(config, {
+    client,
+    serviceClient,
+    ...options,
+  })
 }
 
-export function defineModel<Attrs extends Attributes>(
+export function defineModel<DB = any, Attrs extends Attributes = Attributes>(
   attributes: Attrs,
-  options: ModelOptions = {},
+  options: Partial<ModelConfig<DB>> = {},
 ) {
-  const { naming, primaryKey, tableName, client, serviceClient } = {
-    ...modelOptions,
+  type Schema = SchemaOf<Attrs>
+
+  const { naming, primaryKey, client, serviceClient, tableName } = {
+    ...config,
     ...options,
   }
 
-  class model extends BaseModel {
+  class model extends config.base<DB> {
     static attributes = attributes
     static schema = zodSchemaOf(attributes)
     static transforms = Dict<Transform>()
@@ -39,15 +65,14 @@ export function defineModel<Attrs extends Attributes>(
     static columnNameOf = Dict<string>()
     static attributeNameOf = Dict<string>()
   }
-
-  if (client) model.client = client
-  if (serviceClient) model.serviceClient = serviceClient
+  if (client) model.client = client as SupabaseClient
+  if (serviceClient) model.serviceClient = serviceClient as SupabaseClient
   if (tableName) model.tableName = tableName
 
   const { prototype, transforms, columnNameOf, attributeNameOf } = model
 
   forEach(attributes, (option, attr) => {
-    const column = (option.column ||= model.naming(attr))
+    const column = (option.column ??= model.naming(attr))
 
     columnNameOf[attr] = column
     attributeNameOf[column] = attr
@@ -55,7 +80,7 @@ export function defineModel<Attrs extends Attributes>(
     const { take = identity, emit = identity } = option
     transforms[column] = { take, emit }
 
-    Object.defineProperty(prototype, attr, {
+    defineProperty(prototype, attr, {
       get() {
         return this.$get(attr)
       },
@@ -64,8 +89,6 @@ export function defineModel<Attrs extends Attributes>(
       },
     })
   })
-
-  type Schema = SchemaOf<Attrs>
 
   return model as Extend<
     typeof model,
@@ -83,4 +106,8 @@ export function defineModel<Attrs extends Attributes>(
         >
     }
   >
+}
+
+export async function withServiceRole(execute: () => unknown) {
+  return await config.base.withServiceRole(execute)
 }

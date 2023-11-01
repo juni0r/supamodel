@@ -2,10 +2,15 @@
 //   require('./luxon.inspect.custom')
 // }
 
-export { defineModel, defineModel as model, defineModelConfig } from './model'
-
+export { BaseModel } from './baseModel'
 export { Issues } from './issues'
-
+export { transform, datetime, attr, attr as $ } from './schema'
+export {
+  defineModel,
+  defineModel as model,
+  defineModelConfig,
+  withServiceRole,
+} from './model'
 export {
   RecordNotFound,
   RecordNotCreated,
@@ -13,17 +18,9 @@ export {
   RecordNotDeleted,
 } from './errors'
 
-export { transform, datetime } from './schema'
-export {
-  attr,
-  attr as $,
-  camelCase,
-  snakeCase,
-  kebabCase,
-  pluralize,
-} from './util'
+export { camelCase, snakeCase, kebabCase, pluralize } from './util'
 
-export { createClient, type SupabaseClient } from '@supabase/supabase-js'
+export { createClient, SupabaseClient } from '@supabase/supabase-js'
 export { DateTime } from 'luxon'
 export { z, z as zod } from 'zod'
 

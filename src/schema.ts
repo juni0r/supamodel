@@ -1,7 +1,32 @@
-import mapValues from 'lodash.mapvalues'
-import { custom, ZodDefault, type ZodSchema, type AnyZodObject } from 'zod'
+import type {
+  mayBe,
+  Attribute,
+  AttributeOptions,
+  Attributes,
+  ShapeOf,
+} from './types'
+import {
+  object,
+  custom,
+  ZodDefault,
+  type ZodSchema,
+  type AnyZodObject,
+} from 'zod'
 import { DateTime } from 'luxon'
-import type { mayBe } from './types'
+import mapValues from 'lodash.mapvalues'
+
+export function zodSchemaOf<A extends Attributes>(attributes: A) {
+  return object(mapValues(attributes, 'type') as ShapeOf<A>)
+}
+
+export const identity = <T>(v: T) => v
+
+export function attr<Z extends ZodSchema>(
+  type: Z,
+  options?: AttributeOptions<Z>,
+) {
+  return { type, ...options } as Attribute<Z>
+}
 
 export const datetime = () =>
   custom<DateTime>((val: unknown) =>
@@ -17,7 +42,7 @@ export const transform = {
     take: (iso: mayBe<string>) =>
       iso
         ? DateTime.fromISO(iso, { zone: 'utc' })
-        : DateTime.invalid('empty ISO string'),
+        : DateTime.invalid('unable to parse from empty ISO string'),
     emit: (date: mayBe<DateTime>) => date?.toUTC().toISO() ?? '',
   },
 }

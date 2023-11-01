@@ -26,7 +26,7 @@ import type {
   ID,
 } from './types'
 
-export class BaseModel {
+export class BaseModel<DB = any> {
   static client: SupabaseClient
   static serviceClient: SupabaseClient
 
@@ -47,10 +47,27 @@ export class BaseModel {
     Object.defineProperty(this, 'tableName', { value, enumerable: true })
   }
 
+  static async withServiceRole<Result = unknown>(
+    this: typeof BaseModel,
+    execute: () => Result,
+  ) {
+    const { client } = this
+    this.client = this.serviceClient
+    try {
+      return await execute()
+    } finally {
+      this.client = client
+    }
+  }
+
   $attributes = TrackedDirty()
 
   get $model() {
     return this.constructor as typeof BaseModel
+  }
+
+  get $client() {
+    return this.$model.client as SupabaseClient<DB>
   }
 
   get $id() {
@@ -225,3 +242,5 @@ export class BaseModel {
     return new this().$take(data)
   }
 }
+
+export default BaseModel

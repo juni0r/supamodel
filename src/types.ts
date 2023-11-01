@@ -10,6 +10,7 @@ import type {
   PostgrestFilterBuilder,
   PostgrestQueryBuilder,
 } from '@supabase/postgrest-js'
+import BaseModel from './baseModel'
 
 export type Extend<T, E> = E & Omit<T, keyof E>
 
@@ -28,23 +29,21 @@ interface SupabaseConfig {
   serviceKey?: string
 }
 
-interface Clients<Db = any> {
+export type ModelConfigOptions<Db = any> = {
+  base?: typeof BaseModel
+  client: SupabaseClient<Db> | SupabaseConfig
+  serviceClient?: SupabaseClient<Db>
+  primaryKey?: string
+  naming?: KeyMapper
+}
+
+export interface ModelConfig<Db = any> {
+  base: typeof BaseModel
   client: SupabaseClient<Db>
   serviceClient?: SupabaseClient<Db>
-}
-
-export type ModelConfig<Db = any> = (
-  | { supabase: SupabaseConfig }
-  | Clients<Db>
-) & {
-  primaryKey?: string
-  naming?: KeyMapper
-}
-
-export interface ModelOptions<Db = any> extends Partial<Clients<Db>> {
-  naming?: KeyMapper
   tableName?: string
-  primaryKey?: string
+  primaryKey: string
+  naming: KeyMapper
 }
 
 export type Attributes = Record<string, Attribute>

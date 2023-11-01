@@ -1,22 +1,38 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import 'dotenv/config'
 
 import { Database } from '../supabase/types'
 import {
-  createClient,
+  BaseModel,
   model,
   defineModelConfig,
   transform,
   datetime,
   $,
   z,
+  Scoped,
 } from '.'
+import { config } from './model'
+
+class Model extends BaseModel {
+  static findAll(scoped?: Scoped<any> | undefined): Promise<Model[]> {
+    console.log(`Finding all ${this.tableName}...`)
+    return super.findAll(scoped)
+  }
+}
+
+defineModelConfig<Database>({
+  base: Model,
+  client: {
+    url: process.env.SUPABASE_URL!,
+    anonKey: process.env.SUPABASE_KEY!,
+    serviceKey: process.env.SUPABASE_SERVICE_KEY!,
+  },
+})
 
 const { object, string, number, boolean } = z
-const { SUPABASE_URL, SUPABASE_ANON_KEY } = process.env
 
-defineModelConfig({
-  client: createClient<Database>(SUPABASE_URL!, SUPABASE_ANON_KEY!),
-})
+console.log(config.base)
 
 class Record extends model({
   id: $(number()),
@@ -49,6 +65,8 @@ Record.findAll((where) =>
     // })
   })
   .catch(console.error)
+// Record.withServiceRole(() => {
+// })
 
 // Record.find(+process.argv[2]).then(async (record) => {
 //   console.log(record)
