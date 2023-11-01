@@ -3,16 +3,16 @@ import { New, snakeCase } from './util'
 import BaseModel from './baseModel'
 import type { ModelConfig, ModelConfigOptions } from './types'
 
-const _config = New<ModelConfig<unknown>>({
+export default config
+export function config<DB>() {
+  return _config as ModelConfig<DB>
+}
+
+const _config = New<ModelConfig>({
   base: BaseModel,
   naming: snakeCase,
   primaryKey: 'id' as const,
 })
-
-export function config<DB>() {
-  return _config as ModelConfig<DB>
-}
-export default config
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function defineModelConfig<DB = any>({

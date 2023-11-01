@@ -1,7 +1,10 @@
-import config from './config'
 import { SupabaseClient } from '@supabase/supabase-js'
+
+import config from './config'
+
 import { identity, zodSchemaOf } from './schema'
 import { Dict } from './util'
+
 import forEach from 'lodash.foreach'
 
 import type {
@@ -25,6 +28,9 @@ export function defineModel<DB = any, Attrs extends Attributes = Attributes>(
   }
 
   class model extends config<DB>().base {
+    static client: SupabaseClient<DB>
+    static serviceClient: SupabaseClient<DB>
+
     static attributes = attributes
     static schema = zodSchemaOf(attributes)
     static transforms = Dict<Transform>()
@@ -34,8 +40,9 @@ export function defineModel<DB = any, Attrs extends Attributes = Attributes>(
     static columnNameOf = Dict<string>()
     static attributeNameOf = Dict<string>()
   }
-  if (client) model.client = client as SupabaseClient
-  if (serviceClient) model.serviceClient = serviceClient as SupabaseClient
+
+  if (client) model.client = client
+  if (serviceClient) model.serviceClient = serviceClient
   if (tableName) model.tableName = tableName
 
   const { prototype, transforms, columnNameOf, attributeNameOf } = model

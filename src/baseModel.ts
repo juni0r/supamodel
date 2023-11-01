@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { SupabaseClient } from '@supabase/supabase-js'
+
+import { Issues } from './issues'
 import { defaults } from './schema'
 import { pluralize, TrackedDirty } from './util'
 import {
@@ -9,7 +11,6 @@ import {
   RecordNotFound,
   RecordNotUpdated,
 } from './errors'
-import Issues from './issues'
 
 import forEach from 'lodash.foreach'
 import mapValues from 'lodash.mapvalues'
@@ -27,8 +28,8 @@ import type {
 } from './types'
 
 export class BaseModel<DB = any> {
-  static client: SupabaseClient
-  static serviceClient: SupabaseClient
+  static client: SupabaseClient<any, any, any>
+  static serviceClient: SupabaseClient<any, any, any>
 
   static attributes: Attributes
   static transforms: Record<string, Transform>
@@ -43,18 +44,20 @@ export class BaseModel<DB = any> {
   static get tableName() {
     return (this.tableName = pluralize(this.naming(this.name)))
   }
+
   static set tableName(value: string) {
     Object.defineProperty(this, 'tableName', { value, enumerable: true })
   }
 
   static async withServiceRole<DB, Result = unknown>(
     this: typeof BaseModel<DB>,
-    execute: () => Result,
+    result: () => Result,
   ) {
     const { client } = this
-    this.client = this.serviceClient
+
     try {
-      return await execute()
+      this.client = this.serviceClient
+      return await result()
     } finally {
       this.client = client
     }
@@ -142,9 +145,7 @@ export class BaseModel<DB = any> {
 
   async save() {
     const issues = this.validate()
-    if (issues.any) {
-      return issues
-    }
+    if (issues.any) return issues
 
     const { client, tableName, primaryKey } = this.$model
 
