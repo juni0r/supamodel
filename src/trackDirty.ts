@@ -3,13 +3,15 @@ import type { AnyObject } from './types'
 import { New, isEqual } from './util'
 import mapValues from 'lodash.mapvalues'
 
+export type DirtyProxy<T extends AnyObject = AnyObject> = T & DirtyDecorator<T>
+
 export interface DirtyDecorator<T extends AnyObject = AnyObject> {
   $initial: Partial<T>
   $changes: Partial<T>
   $isDirty: boolean
   $didChange(key: keyof T): boolean
-  $commit(): DirtyDecorator<T>
-  $revert(): DirtyDecorator<T>
+  $commit(): DirtyProxy<T>
+  $revert(): DirtyProxy<T>
 }
 
 export function trackDirty<T extends AnyObject>(object: T) {
@@ -17,13 +19,12 @@ export function trackDirty<T extends AnyObject>(object: T) {
 
   function $commit() {
     $initial = New()
-    return decorator
+    return proxy
   }
 
   function $revert() {
     Object.assign(object, $initial)
-    $commit()
-    return decorator
+    return $commit()
   }
 
   const decorator: DirtyDecorator<T> = {
@@ -63,9 +64,9 @@ export function trackDirty<T extends AnyObject>(object: T) {
 
       return Reflect.set(target, prop, value, receiver)
     },
-  })
+  }) as DirtyProxy<T>
 
-  return proxy as T & DirtyDecorator<T>
+  return proxy
 }
 
 export default trackDirty

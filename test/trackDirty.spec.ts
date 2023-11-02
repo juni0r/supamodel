@@ -45,6 +45,10 @@ describe('trackDirty', () => {
       expect(subject.$didChange('bar')).toBe(false)
       expect(subject.$didChange('baz')).toBe(false)
     })
+
+    it('returns itself', () => {
+      expect(subject.$commit()).toStrictEqual(subject)
+    })
   })
 
   describe('commit', () => {
@@ -68,6 +72,10 @@ describe('trackDirty', () => {
       expect(subject.$didChange('foo')).toBe(false)
       expect(subject.$didChange('bar')).toBe(false)
       expect(subject.$didChange('baz')).toBe(false)
+    })
+
+    it('returns itself', () => {
+      expect(subject.$commit()).toStrictEqual(subject)
     })
   })
 })

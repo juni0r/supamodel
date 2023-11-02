@@ -1,53 +1,50 @@
-import { Database } from '../supabase/types'
 import {
-  BaseModel,
-  defineModel,
+  withServiceRole,
   defineModelConfig,
+  defineModel,
+  baseModel,
   config,
-  transform,
   datetime,
+  transform,
   $,
   z,
-  Scoped,
-  withServiceRole,
 } from '.'
+import type { Database } from '../supabase/types'
+import type { Scoped } from './types'
 
-class AppModel extends BaseModel<Database> {
+class Model extends baseModel<Database>() {
   static findAll(scoped?: Scoped) {
     console.log(`Finding all ${this.tableName}...`)
     return super.findAll(scoped)
   }
-  // static findAll<T extends typeof AppModel>(
-  //   this: T,
-  //   scoped?: Scoped<any> | undefined,
-  // ) {
-  //   console.log(`Finding all ${this.tableName}...`)
-  //   return super.findAll(scoped) as Promise<InstanceType<T>[]>
-  // }
 }
 
-defineModelConfig<Database>({
-  base: AppModel,
-  client: {
-    url: process.env.SUPABASE_URL!,
-    key: process.env.SUPABASE_KEY!,
-    serviceKey: process.env.SUPABASE_SERVICE_KEY!,
-  },
-})
+const {
+  SUPABASE_URL = '',
+  SUPABASE_KEY = '',
+  SUPABASE_SERVICE_KEY,
+} = process.env
 
-const { object, string, number, boolean } = z
+defineModelConfig<Database>({
+  client: {
+    url: SUPABASE_URL,
+    key: SUPABASE_KEY,
+    serviceKey: SUPABASE_SERVICE_KEY,
+  },
+  base: Model,
+})
 
 console.dir(config(), { depth: 1 })
 
-class Record extends defineModel<Database>({
-  id: $(number()),
-  firstName: $(string(), { column: 'given_name' }),
-  lastName: $(string(), { column: 'family_name' }),
-  email: $(string().email()),
-  birthday: $(string(), { column: 'date_of_birth' }),
-  score: $(number().int()),
-  data: $(object({}).passthrough()),
-  isOkay: $(boolean()),
+class Record extends defineModel({
+  id: $(z.number()),
+  firstName: $(z.string(), { column: 'given_name' }),
+  lastName: $(z.string(), { column: 'family_name' }),
+  email: $(z.string().email()),
+  birthday: $(z.string(), { column: 'date_of_birth' }),
+  score: $(z.number().int()),
+  data: $(z.object({}).passthrough()),
+  isOkay: $(z.boolean()),
   createdAt: $(datetime(), transform.datetime),
 }) {
   get name() {
@@ -57,36 +54,19 @@ class Record extends defineModel<Database>({
 
 console.log((Record.client as any).supabaseKey)
 
-withServiceRole<Database>(() => {
+withServiceRole(async () => {
   console.log((Record.client as any).supabaseKey)
 
-  Record.findAll((where) =>
+  const records = await Record.findAll((where) =>
     where
       .ilike('email', '%@mail.com')
       .gte('date_of_birth', '1974-01-01')
       .eq('is_okay', false),
   )
-    .then((records) => {
-      console.dir(records)
-      console.log((Record.client as any).supabaseKey)
-    })
-    .catch(console.error)
-})
+  console.dir(records)
+  console.log((Record.client as any).supabaseKey)
 
-const r = new Record().$take({ first_name: 'Stella' })
-r.firstName
-// type X = Simplify<
-//   (typeof Record)['client'] extends SupabaseClient<infer D, infer S, infer G>
-//     ? [D, S, G]
-//     : never
-// >
-// type Y = Simplify<
-//   Record['$client'] extends SupabaseClient<infer D, infer S, infer G>
-//     ? [D, S, G]
-//     : never
-// >
-
-Record.find(+process.argv[2]).then(async (record) => {
+  const record = await Record.find(+process.argv[2])
   console.log(record)
 
   if (record.lastName === 'Goldbacke') {
@@ -99,15 +79,11 @@ Record.find(+process.argv[2]).then(async (record) => {
     record.data = { weniger: 'drin' }
   }
 
-  return record
-    .save()
-    .then((issues) => {
-      if (issues.any) {
-        console.warn('🖐️ ', issues)
-        return
-      }
-      console.log('👍🏼 Updated')
-      console.log(record)
-    })
-    .catch((error) => console.error('💥', error))
+  const issues = await record.save()
+  if (issues.none) {
+    console.log('👍🏼 Updated')
+    console.log(record)
+  } else {
+    console.warn('🖐️ ', issues)
+  }
 })

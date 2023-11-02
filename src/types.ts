@@ -22,8 +22,20 @@ export type mayBe<Type> = Type | null | undefined
 
 export type ID = string | number
 
+export interface Clients<DB = any> {
+  client: SupabaseClient<DB>
+  serviceClient?: SupabaseClient<DB>
+}
+
+export interface ModelConfig<DB = any> extends Clients<DB> {
+  base: typeof BaseModel
+  tableName?: string
+  primaryKey: string
+  naming: KeyMapper
+}
+
 export type ModelConfigOptions<DB = any> = {
-  base?: typeof BaseModel<DB>
+  base?: typeof BaseModel
   client:
     | SupabaseClient<DB>
     | {
@@ -34,15 +46,6 @@ export type ModelConfigOptions<DB = any> = {
   serviceClient?: SupabaseClient<DB>
   primaryKey?: string
   naming?: KeyMapper
-}
-
-export interface ModelConfig<DB = any> {
-  base: typeof BaseModel<DB>
-  client: SupabaseClient<DB>
-  serviceClient?: SupabaseClient<DB>
-  tableName?: string
-  primaryKey: string
-  naming: KeyMapper
 }
 
 export type Attributes = Record<string, Attribute>

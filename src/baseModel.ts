@@ -26,9 +26,9 @@ import type {
   ID,
 } from './types'
 
-export class BaseModel<DB = any> {
+export class BaseModel {
   static client: SupabaseClient<any, any, any>
-  static serviceClient: SupabaseClient<any, any, any>
+  static serviceClient?: SupabaseClient<any, any, any>
 
   static attributes: Attributes
   static schema: ZodSchemaOf<Attributes>
@@ -47,27 +47,10 @@ export class BaseModel<DB = any> {
     Object.defineProperty(this, 'tableName', { value, enumerable: true })
   }
 
-  static async withServiceRole<DB, Result = unknown>(
-    this: typeof BaseModel<DB>,
-    result: () => Result,
-  ) {
-    const client = Object.getOwnPropertyDescriptor(this, 'client')?.value
-    try {
-      this.client = this.serviceClient
-      return await result()
-    } finally {
-      this.client = client
-    }
-  }
-
   $attributes = TrackedDirty()
 
   get $model() {
-    return this.constructor as typeof BaseModel<DB>
-  }
-
-  get $client() {
-    return this.$model.client //as SupabaseClient<DB, any, any>
+    return this.constructor as typeof BaseModel
   }
 
   get $id() {
@@ -106,7 +89,7 @@ export class BaseModel<DB = any> {
       : this.$attributes[column]
   }
 
-  $take<T extends BaseModel<DB>>(this: T, values: AnyObject) {
+  $take<T extends BaseModel>(this: T, values: AnyObject) {
     const { transforms } = this.$model
 
     forEach(values, (value, column) => {
@@ -216,18 +199,6 @@ export class BaseModel<DB = any> {
     )
   }
 
-  // static async findAll<T extends typeof BaseModel>(this: T, scoped?: Scoped) {
-  //   let query = this.select()
-
-  //   if (scoped) query = scoped(query)
-
-  //   const { error, data } = await query
-  //   if (error) throw error
-
-  //   return data.map((record) => {
-  //     return new this().$take(record)
-  //   }) as InstanceType<T>[]
-  // }
   static async findAll(scoped?: Scoped) {
     let query = this.select()
 
@@ -252,6 +223,24 @@ export class BaseModel<DB = any> {
     if (!data) throw new RecordNotFound(this.tableName, id)
 
     return new this().$take(data) as InstanceType<T>
+  }
+
+  static async withServiceRole<Result = unknown>(
+    this: typeof BaseModel,
+    result: () => Result,
+  ) {
+    if (!this.serviceClient)
+      throw new Error('Service client is not configured.')
+
+    const ownClient = Object.getOwnPropertyDescriptor(this, 'client')?.value
+
+    try {
+      this.client = this.serviceClient
+      return await result()
+    } finally {
+      if (ownClient) this.client = ownClient
+      else delete (this as any).client
+    }
   }
 }
 

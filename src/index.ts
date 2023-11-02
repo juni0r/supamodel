@@ -16,7 +16,7 @@ export { Issues } from './issues'
 export { defineModel, withServiceRole } from './model'
 export { camelCase, snakeCase, kebabCase, pluralize } from './util'
 export { transform, datetime, attr, attr as $ } from './schema'
-export { defineModelConfig, config } from './config'
+export { defineModelConfig, config, baseModel } from './config'
 
 export {
   RecordNotFound,

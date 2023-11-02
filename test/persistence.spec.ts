@@ -7,16 +7,13 @@ import defineModelConfig from './support/defineModelConfig'
 describe('Model', () => {
   defineModelConfig()
 
-  class Record extends defineModel(
-    {
-      id: $(number().int()),
-      name: $(string().min(1)),
-      layer: $(number(), { column: 'z_index' }),
-      isOkay: $(boolean()),
-      date: $(date(), transform.date),
-    },
-    // { client: client.mock },
-  ) {}
+  class Record extends defineModel({
+    id: $(number().int()),
+    name: $(string().min(1)),
+    layer: $(number(), { column: 'z_index' }),
+    isOkay: $(boolean()),
+    date: $(date(), transform.date),
+  }) {}
 
   let record: Record
 
