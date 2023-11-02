@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { defineModel as model, $, z, datetime, transform, DateTime, ID } from '../src'
+import { defineModel, $, z, datetime, transform, DateTime, ID } from '../src'
 import { Expect } from './support/util'
+
+import defineModelConfig from './support/defineModelConfig'
 
 const {
   string,
@@ -13,25 +15,27 @@ const {
   ZodDefault,
 } = z
 
-class Subject extends model({
-  id: $(number()),
-  givenName: $(string()),
-  familyName: $(string(), { column: 'last_name' }),
-  score: $(number().default(0)),
-  date: $(date(), transform.date),
-  dateTime: $(datetime(), transform.datetime),
-}) {
-  get name() {
-    return `${this.givenName} ${this.familyName}`
-  }
-}
-
 describe('Attributes', () => {
+  defineModelConfig()
+
+  class Subject extends defineModel({
+    id: $(number()),
+    givenName: $(string()),
+    familyName: $(string(), { column: 'last_name' }),
+    score: $(number().default(0)),
+    date: $(date(), transform.date),
+    dateTime: $(datetime(), transform.datetime),
+  }) {
+    get name() {
+      return `${this.givenName} ${this.familyName}`
+    }
+  }
+
   let subject: Subject
 
   const isoDate = '2020-02-02T02:02:02.020Z'
 
-  const date = new Date(isoDate)
+  const jsdate = new Date(isoDate)
   const dateTime = DateTime.fromISO(isoDate).toUTC()
 
   const attributes = Object.freeze({
@@ -110,14 +114,14 @@ describe('Attributes', () => {
         givenName: 'Tom',
         familyName: 'Unfried',
         score: 23,
-        date,
+        date: jsdate,
         dateTime,
       })
 
       expect(subject.givenName).toBe('Tom')
       expect(subject.familyName).toBe('Unfried')
       expect(subject.score).toBe(23)
-      expect(subject.date).toEqual(date)
+      expect(subject.date).toEqual(jsdate)
       expect(subject.dateTime).toEqual(dateTime)
     })
   })
@@ -135,60 +139,60 @@ describe('Attributes', () => {
         given_name: 'Stella',
         last_name: 'Goldbacke',
         score: 42,
-        date: date,
+        date: jsdate,
         date_time: DateTime.fromISO(isoDate).toUTC(),
       })
     })
   })
-})
 
-describe('Static attributes', () => {
-  it('maps attribute to column keys', () => {
-    expect(Subject.columnNameOf).toEqual({
-      id: 'id',
-      givenName: 'given_name',
-      familyName: 'last_name',
-      score: 'score',
-      date: 'date',
-      dateTime: 'date_time',
+  describe('static', () => {
+    it('maps attribute to column keys', () => {
+      expect(Subject.columnNameOf).toEqual({
+        id: 'id',
+        givenName: 'given_name',
+        familyName: 'last_name',
+        score: 'score',
+        date: 'date',
+        dateTime: 'date_time',
+      })
     })
-  })
 
-  it('maps column to attribute keys', () => {
-    expect(Subject.attributeNameOf).toEqual({
-      id: 'id',
-      given_name: 'givenName',
-      last_name: 'familyName',
-      score: 'score',
-      date: 'date',
-      date_time: 'dateTime',
+    it('maps column to attribute keys', () => {
+      expect(Subject.attributeNameOf).toEqual({
+        id: 'id',
+        given_name: 'givenName',
+        last_name: 'familyName',
+        score: 'score',
+        date: 'date',
+        date_time: 'dateTime',
+      })
     })
-  })
 
-  it('transforms attributes', () => {
-    const { transforms } = Subject
+    it('transforms attributes', () => {
+      const { transforms } = Subject
 
-    const isoDate = '2020-02-02T20:20:20.020Z'
+      const isoDate = '2020-02-02T20:20:20.020Z'
 
-    const date = new Date(isoDate)
-    expect(transforms.date.emit?.(date)).toBe(isoDate)
+      const date = new Date(isoDate)
+      expect(transforms.date.emit?.(date)).toBe(isoDate)
 
-    const dateTime = DateTime.fromISO(isoDate)
-    expect(transforms.date_time.emit?.(dateTime)).toBe(isoDate)
-  })
+      const dateTime = DateTime.fromISO(isoDate)
+      expect(transforms.date_time.emit?.(dateTime)).toBe(isoDate)
+    })
 
-  it('maps attribute keys to schemas', () => {
-    const { shape } = Subject.schema
+    it('maps attribute keys to schemas', () => {
+      const { shape } = Subject.schema
 
-    expect(shape.id).toBeInstanceOf(ZodNumber)
-    expect(shape.givenName).toBeInstanceOf(ZodString)
-    expect(shape.familyName).toBeInstanceOf(ZodString)
-    expect(shape.date).toBeInstanceOf(ZodDate)
+      expect(shape.id).toBeInstanceOf(ZodNumber)
+      expect(shape.givenName).toBeInstanceOf(ZodString)
+      expect(shape.familyName).toBeInstanceOf(ZodString)
+      expect(shape.date).toBeInstanceOf(ZodDate)
 
-    expect(shape.score).toBeInstanceOf(ZodDefault)
-    expect(shape.score._def.innerType).toBeInstanceOf(ZodNumber)
-    expect(shape.score._def.defaultValue()).toBe(0)
+      expect(shape.score).toBeInstanceOf(ZodDefault)
+      expect(shape.score._def.innerType).toBeInstanceOf(ZodNumber)
+      expect(shape.score._def.defaultValue()).toBe(0)
 
-    expect(shape.dateTime).toBeInstanceOf(ZodEffects)
+      expect(shape.dateTime).toBeInstanceOf(ZodEffects)
+    })
   })
 })

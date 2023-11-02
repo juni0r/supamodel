@@ -24,7 +24,9 @@ describe('trackDirty', () => {
   })
 
   describe('revert', () => {
-    beforeEach(() => subject.$revert())
+    beforeEach(() => {
+      subject.$revert()
+    })
 
     it('restores original values', () => {
       expect(subject).toEqual({ foo: 42, bar: '23', baz: true })
@@ -46,7 +48,9 @@ describe('trackDirty', () => {
   })
 
   describe('commit', () => {
-    beforeEach(() => subject.$commit())
+    beforeEach(() => {
+      subject.$commit()
+    })
 
     it('keeps changed values', () => {
       expect(subject).toEqual({ foo: 99, bar: '69', baz: true })

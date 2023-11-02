@@ -1,19 +1,40 @@
 import { SupabaseClient } from '@supabase/supabase-js'
-// import util from 'node:util'
+import { GenericSchema } from '@supabase/supabase-js/src/lib/types'
 
-const createClientMock = () => new ClientMock()
+const createClientMock = <DB>(...args: [string, string]) =>
+  new ClientMock<DB>(...args)
+
 export default createClientMock
 
-export class ClientMock {
+declare module '@supabase/supabase-js' {
+  class SupabaseClient {
+    get $mock(): ClientMock
+    $on(
+      command: RegExp | string,
+      handler: (match: RegExpMatchArray) => unknown,
+    ): void
+    $reset(): void
+  }
+}
+
+export class ClientMock<
+  Database = any,
+  SchemaName extends string & keyof Database = 'public' extends keyof Database
+    ? 'public'
+    : string & keyof Database,
+  Schema extends GenericSchema = Database[SchemaName] extends GenericSchema
+    ? Database[SchemaName]
+    : any,
+> extends SupabaseClient<Database, SchemaName, Schema> {
   commands = [] as string[]
   hooks = [] as CommandHook[]
 
-  get mock() {
-    return this as unknown as SupabaseClient
+  get $mock() {
+    return this as ClientMock
   }
 
-  from(table: string) {
-    const collector = ['from', table]
+  from<TableName extends string & keyof Schema['Tables']>(relation: TableName) {
+    const collector = ['from', relation]
 
     return commandProxy(collector, () => {
       const command = collector.join(' ')
@@ -29,14 +50,14 @@ export class ClientMock {
     })
   }
 
-  on(regexp: RegExp | string, handler: (md: RegExpMatchArray) => unknown) {
-    if (typeof regexp === 'string') {
-      regexp = new RegExp(regexp)
+  $on(command: RegExp | string, handler: (md: RegExpMatchArray) => unknown) {
+    if (typeof command === 'string') {
+      command = new RegExp(command)
     }
-    this.hooks.push(new CommandHook(regexp, handler))
+    this.hooks.push(new CommandHook(command, handler))
   }
 
-  reset() {
+  $reset() {
     this.commands = []
     this.hooks = []
   }
@@ -59,17 +80,16 @@ function commandProxy(command: string[] = [], then: () => unknown) {
   const proxy = new Proxy(command, {
     get(target, key) {
       if (key === 'then') {
-        // console.log('CMD', target)
-        return (cb: (val: unknown) => unknown) => cb(Promise.resolve(then()))
+        // console.log('CMD', target, then, then())
+        return (resolve: (val: unknown) => unknown) =>
+          resolve(Promise.resolve(then()))
       }
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (...args: any[]) => {
         push.call(target, key, ...args.map(inspect))
         return proxy
       }
     },
-  }) as string[]
+  }) as any
   return proxy
 }
 

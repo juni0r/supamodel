@@ -1,35 +1,32 @@
 import { SupabaseClient } from '@supabase/supabase-js'
-
-import config from './config'
-
-import { identity, zodSchemaOf } from './schema'
-import { Dict } from './util'
-
 import forEach from 'lodash.foreach'
 
+import config from './config'
+import { Dict } from './util'
+import { identity, zodSchemaOf } from './schema'
+
 import type {
-  ModelConfig,
   Attributes,
   Transform,
   SchemaOf,
   Extend,
+  ModelConfig,
 } from './types'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function defineModel<DB = any, Attrs extends Attributes = Attributes>(
   attributes: Attrs,
-  options: Partial<ModelConfig<DB>> = {},
+  options: Partial<ModelConfig<DB>> & { tableName?: string } = {},
 ) {
-  type Schema = SchemaOf<Attrs>
+  const modelConfig = config<DB>()
 
-  const { naming, primaryKey, client, serviceClient, tableName } = {
-    ...config(),
+  const { tableName, client, serviceClient, naming, primaryKey } = {
+    ...modelConfig,
     ...options,
   }
 
-  class model extends config<DB>().base {
-    static client: SupabaseClient<DB>
-    static serviceClient: SupabaseClient<DB>
+  class model extends modelConfig.base {
+    declare static client: SupabaseClient<DB>
+    declare static serviceClient: SupabaseClient<DB>
 
     static attributes = attributes
     static schema = zodSchemaOf(attributes)
@@ -41,9 +38,9 @@ export function defineModel<DB = any, Attrs extends Attributes = Attributes>(
     static attributeNameOf = Dict<string>()
   }
 
-  if (client) model.client = client
-  if (serviceClient) model.serviceClient = serviceClient
   if (tableName) model.tableName = tableName
+  if (client) model.client = client as SupabaseClient<DB>
+  if (serviceClient) model.serviceClient = serviceClient
 
   const { prototype, transforms, columnNameOf, attributeNameOf } = model
 
@@ -66,6 +63,8 @@ export function defineModel<DB = any, Attrs extends Attributes = Attributes>(
     })
   })
 
+  type Schema = SchemaOf<Attrs>
+
   return model as Extend<
     typeof model,
     {
@@ -76,6 +75,14 @@ export function defineModel<DB = any, Attrs extends Attributes = Attributes>(
             $model: typeof model
             $get<K extends keyof Schema>(key: K): Schema[K]
             $set<K extends keyof Schema>(key: K, value: Schema[K]): void
+            // $find<T extends InstanceType<typeof model>>(
+            //   this: T,
+            //   values: AnyObject,
+            // ): T
+            // $take<T extends InstanceType<typeof model>>(
+            //   this: T,
+            //   values: AnyObject,
+            // ): T
             $initial<K extends keyof Schema>(key: K): Schema[K]
             $didChange<K extends keyof Schema>(key: K): boolean
           }
@@ -84,6 +91,6 @@ export function defineModel<DB = any, Attrs extends Attributes = Attributes>(
   >
 }
 
-export async function withServiceRole<DB>(execute: () => unknown) {
-  return await config<DB>().base.withServiceRole<DB>(execute)
+export function withServiceRole<DB>(result: () => unknown) {
+  return config<DB>().base.withServiceRole<DB>(result)
 }

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { ZodObject, TypeOf, ZodSchema } from 'zod'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type {
@@ -23,15 +22,15 @@ export type mayBe<Type> = Type | null | undefined
 
 export type ID = string | number
 
-interface SupabaseConfig {
-  url: string
-  anonKey: string
-  serviceKey?: string
-}
-
 export type ModelConfigOptions<DB = any> = {
   base?: typeof BaseModel<DB>
-  client: SupabaseClient<DB> | SupabaseConfig
+  client:
+    | SupabaseClient<DB>
+    | {
+        url: string
+        key: string
+        serviceKey?: string
+      }
   serviceClient?: SupabaseClient<DB>
   primaryKey?: string
   naming?: KeyMapper

@@ -2,15 +2,19 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { defineModel as model, $, transform, datetime, DateTime } from '../src'
 import { string, date, number, boolean } from 'zod'
 
-class Subject extends model({
-  name: $(string()),
-  position: $(number()),
-  isOkay: $(boolean()),
-  date: $(date(), transform.date),
-  dateTime: $(datetime(), transform.datetime),
-}) {}
+import defineModelConfig from './support/defineModelConfig'
 
 describe('Model', () => {
+  defineModelConfig()
+
+  class Subject extends model({
+    name: $(string()),
+    position: $(number()),
+    isOkay: $(boolean()),
+    date: $(date(), transform.date),
+    dateTime: $(datetime(), transform.datetime),
+  }) {}
+
   let subject: Subject
 
   beforeEach(() => {

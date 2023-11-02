@@ -8,8 +8,8 @@ export interface DirtyDecorator<T extends AnyObject = AnyObject> {
   $changes: Partial<T>
   $isDirty: boolean
   $didChange(key: keyof T): boolean
-  $commit(): void
-  $revert(): void
+  $commit(): DirtyDecorator<T>
+  $revert(): DirtyDecorator<T>
 }
 
 export function trackDirty<T extends AnyObject>(object: T) {
@@ -17,11 +17,13 @@ export function trackDirty<T extends AnyObject>(object: T) {
 
   function $commit() {
     $initial = New()
+    return decorator
   }
 
   function $revert() {
     Object.assign(object, $initial)
     $commit()
+    return decorator
   }
 
   const decorator: DirtyDecorator<T> = {
@@ -41,7 +43,7 @@ export function trackDirty<T extends AnyObject>(object: T) {
     $revert,
   }
 
-  return new Proxy(object, {
+  const proxy = new Proxy(object, {
     get(target, prop, value) {
       if (prop in decorator) {
         return decorator[prop as keyof typeof decorator]
@@ -61,7 +63,9 @@ export function trackDirty<T extends AnyObject>(object: T) {
 
       return Reflect.set(target, prop, value, receiver)
     },
-  }) as T & DirtyDecorator<T>
+  })
+
+  return proxy as T & DirtyDecorator<T>
 }
 
 export default trackDirty

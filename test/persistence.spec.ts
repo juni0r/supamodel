@@ -1,10 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { defineModel, $, transform } from '../src'
 import { string, date, number, boolean } from 'zod'
-import createClientMock from './support/clientMock'
+
+import defineModelConfig from './support/defineModelConfig'
 
 describe('Model', () => {
-  const client = createClientMock()
+  defineModelConfig()
 
   class Record extends defineModel(
     {
@@ -14,7 +15,7 @@ describe('Model', () => {
       isOkay: $(boolean()),
       date: $(date(), transform.date),
     },
-    { client: client.mock },
+    // { client: client.mock },
   ) {}
 
   let record: Record
@@ -30,7 +31,7 @@ describe('Model', () => {
   })
 
   afterEach(() => {
-    client.reset()
+    Record.client.$reset()
   })
 
   it('mocks', async () => {
@@ -38,13 +39,12 @@ describe('Model', () => {
     record.layer = 42
     record.date = new Date('2121-12-12T12:12:12.121Z')
 
-    client.on(/^from records update/, () => ({
+    Record.client.$on(/^from records update/, () => ({
       data: { name: 'name_returned' },
     }))
 
     const issues = await record.save()
 
-    // console.log(issues)
     expect(issues.any).toBeFalsy()
     expect(record.name).toBe('name_returned')
   })

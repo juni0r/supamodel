@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { underscore, camelize, dasherize, pluralize } from 'inflection'
 import { trackDirty, type DirtyDecorator } from './trackDirty'
 import type { AnyObject, KeyMapper } from './types'
@@ -22,13 +21,6 @@ export function TrackedDirty() {
 
 function keysOf<T extends object>(object: T) {
   return Object.keys(object) as (keyof T)[]
-}
-
-export function keyzOf<T extends AnyObject>(
-  object: T,
-  block: <K extends keyof T>(key: K) => T[K],
-) {
-  return Object.keys(object).map(block)
 }
 
 const snakeCase: KeyMapper = (key: string) => underscore(key)

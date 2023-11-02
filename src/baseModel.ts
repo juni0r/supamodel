@@ -1,9 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { SupabaseClient } from '@supabase/supabase-js'
 
 import { Issues } from './issues'
 import { defaults } from './schema'
-import { pluralize, TrackedDirty } from './util'
+import { pluralize, TrackedDirty, type Dict } from './util'
 import {
   DatabaseError,
   RecordNotCreated,
@@ -32,14 +31,13 @@ export class BaseModel<DB = any> {
   static serviceClient: SupabaseClient<any, any, any>
 
   static attributes: Attributes
-  static transforms: Record<string, Transform>
   static schema: ZodSchemaOf<Attributes>
+  static transforms: Dict<Transform>
   static naming: KeyMapper
-
-  static columnNameOf: Record<string, string>
-  static attributeNameOf: Record<string, string>
-
   static primaryKey: string
+
+  static columnNameOf: Dict<string>
+  static attributeNameOf: Dict<string>
 
   static get tableName() {
     return (this.tableName = pluralize(this.naming(this.name)))
@@ -53,8 +51,7 @@ export class BaseModel<DB = any> {
     this: typeof BaseModel<DB>,
     result: () => Result,
   ) {
-    const { client } = this
-
+    const client = Object.getOwnPropertyDescriptor(this, 'client')?.value
     try {
       this.client = this.serviceClient
       return await result()
@@ -66,11 +63,11 @@ export class BaseModel<DB = any> {
   $attributes = TrackedDirty()
 
   get $model() {
-    return this.constructor as typeof BaseModel
+    return this.constructor as typeof BaseModel<DB>
   }
 
   get $client() {
-    return this.$model.client as SupabaseClient<DB>
+    return this.$model.client //as SupabaseClient<DB, any, any>
   }
 
   get $id() {
@@ -81,8 +78,8 @@ export class BaseModel<DB = any> {
     return this.$id !== undefined
   }
 
-  get $isNewRecord() {
-    return this.$id === undefined
+  get $isDeleted() {
+    return false
   }
 
   $get(attr: string) {
@@ -109,7 +106,7 @@ export class BaseModel<DB = any> {
       : this.$attributes[column]
   }
 
-  $take<T extends BaseModel>(this: T, values: AnyObject) {
+  $take<T extends BaseModel<DB>>(this: T, values: AnyObject) {
     const { transforms } = this.$model
 
     forEach(values, (value, column) => {
@@ -173,6 +170,7 @@ export class BaseModel<DB = any> {
   async delete() {
     const { error } = await this.$model.delete(this.$id)
     if (error) throw new RecordNotDeleted(error)
+    this.$attributes.$revert()
   }
 
   toJSON(): ToJSON {
@@ -218,6 +216,18 @@ export class BaseModel<DB = any> {
     )
   }
 
+  // static async findAll<T extends typeof BaseModel>(this: T, scoped?: Scoped) {
+  //   let query = this.select()
+
+  //   if (scoped) query = scoped(query)
+
+  //   const { error, data } = await query
+  //   if (error) throw error
+
+  //   return data.map((record) => {
+  //     return new this().$take(record)
+  //   }) as InstanceType<T>[]
+  // }
   static async findAll(scoped?: Scoped) {
     let query = this.select()
 
@@ -231,7 +241,7 @@ export class BaseModel<DB = any> {
     })
   }
 
-  static async find(id: ID) {
+  static async find<T extends typeof BaseModel>(this: T, id: ID) {
     const { data, error } = await this.client
       .from(this.tableName)
       .select()
@@ -241,7 +251,7 @@ export class BaseModel<DB = any> {
     if (error) throw new DatabaseError(error)
     if (!data) throw new RecordNotFound(this.tableName, id)
 
-    return new this().$take(data)
+    return new this().$take(data) as InstanceType<T>
   }
 }
 
