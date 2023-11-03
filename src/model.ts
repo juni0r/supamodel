@@ -10,17 +10,18 @@ import type {
   Transform,
   SchemaOf,
   Extend,
-  ModelConfig,
+  ModelOptions,
 } from './types'
+import BaseModel from './baseModel'
 
-export function defineModel<Attrs extends Attributes = Attributes>(
+export function defineModel<Attrs extends Attributes>(
   attributes: Attrs,
-  options: Partial<ModelConfig> = {},
+  _options: Partial<ModelOptions> = {},
 ) {
-  const { base, tableName, client, serviceClient, naming, primaryKey } = {
+  const { base, naming, primaryKey, tableName, client, serviceClient } = {
     ...config(),
-    ...options,
-  } as ModelConfig
+    ..._options,
+  }
 
   class model extends base {
     static attributes = attributes
@@ -33,30 +34,11 @@ export function defineModel<Attrs extends Attributes = Attributes>(
     static attributeNameOf = Dict<string>()
   }
 
-  if (tableName) model.tableName = tableName
   if (client) model.client = client
   if (serviceClient) model.serviceClient = serviceClient
+  if (tableName) model.tableName = tableName
 
-  const { prototype, transforms, columnNameOf, attributeNameOf } = model
-
-  forEach(attributes, (option, attr) => {
-    const column = (option.column ??= model.naming(attr))
-
-    columnNameOf[attr] = column
-    attributeNameOf[column] = attr
-
-    const { take = identity, emit = identity } = option
-    transforms[column] = { take, emit }
-
-    Object.defineProperty(prototype, attr, {
-      get() {
-        return this.$get(attr)
-      },
-      set(value: unknown) {
-        this.$set(attr, value)
-      },
-    })
-  })
+  defineAttributes(model, attributes)
 
   type Schema = SchemaOf<Attrs>
   type Model = Schema &
@@ -78,6 +60,29 @@ export function defineModel<Attrs extends Attributes = Attributes>(
   >
 
   return model as ModelClass
+}
+
+function defineAttributes(model: typeof BaseModel, attributes: Attributes) {
+  const { prototype, transforms, columnNameOf, attributeNameOf } = model
+
+  forEach(attributes, (option, attr) => {
+    const column = (option.column ??= model.naming(attr))
+
+    columnNameOf[attr] = column
+    attributeNameOf[column] = attr
+
+    const { take = identity, emit = identity } = option
+    transforms[column] = { take, emit }
+
+    Object.defineProperty(prototype, attr, {
+      get() {
+        return this.$get(attr)
+      },
+      set(value: unknown) {
+        this.$set(attr, value)
+      },
+    })
+  })
 }
 
 export function withServiceRole(result: () => unknown) {

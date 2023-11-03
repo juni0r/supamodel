@@ -28,7 +28,7 @@ import type {
 
 export class BaseModel {
   static client: SupabaseClient<any, any, any>
-  static serviceClient?: SupabaseClient<any, any, any>
+  static serviceClient: SupabaseClient<any, any, any>
 
   static attributes: Attributes
   static schema: ZodSchemaOf<Attributes>

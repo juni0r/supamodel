@@ -19,20 +19,7 @@ export class Model extends BaseModel {
   }
 }
 
-const {
-  SUPABASE_URL = '',
-  SUPABASE_KEY = '',
-  SUPABASE_SERVICE_KEY,
-} = process.env
-
-defineModelConfig<Database>({
-  base: Model,
-  client: {
-    url: SUPABASE_URL,
-    key: SUPABASE_KEY,
-    serviceKey: SUPABASE_SERVICE_KEY,
-  },
-})
+defineModelConfig<Database>({ base: Model })
 
 console.dir(config(), { depth: 1 })
 

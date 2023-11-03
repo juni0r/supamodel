@@ -22,19 +22,12 @@ export type ID = string | number
 
 export interface Clients<DB = any> {
   client: SupabaseClient<DB>
-  serviceClient?: SupabaseClient<DB>
-}
-
-export interface ModelConfig<DB = any> extends Clients<DB> {
-  base: typeof BaseModel
-  tableName?: string
-  primaryKey: string
-  naming: KeyMapper
+  serviceClient: SupabaseClient<DB>
 }
 
 export type ModelConfigOptions<DB = any> = {
   base?: typeof BaseModel
-  client:
+  client?:
     | SupabaseClient<DB>
     | {
         url: string
@@ -45,6 +38,16 @@ export type ModelConfigOptions<DB = any> = {
   primaryKey?: string
   naming?: KeyMapper
 }
+
+export interface ModelConfig<DB = any> extends Clients<DB> {
+  base: typeof BaseModel
+  client: SupabaseClient<DB>
+  serviceClient: SupabaseClient<DB>
+  primaryKey: string
+  naming: KeyMapper
+}
+
+export type ModelOptions<DB = any> = ModelConfig<DB> & { tableName: string }
 
 export type Attributes = Record<string, Attribute>
 
