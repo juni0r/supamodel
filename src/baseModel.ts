@@ -172,6 +172,10 @@ export class BaseModel {
     return defaults(this.schema)
   }
 
+  static take<T extends typeof BaseModel>(this: T, values: AnyObject) {
+    return new this().$take(values) as InstanceType<T>
+  }
+
   static scoped<T = AnyObject>(filter: FilterBuilder<T>): FilterBuilder<T> {
     return filter
   }

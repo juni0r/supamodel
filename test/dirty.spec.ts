@@ -18,7 +18,7 @@ describe('Model', () => {
   let subject: Subject
 
   beforeEach(() => {
-    subject = new Subject().$take({
+    subject = Subject.take({
       name: 'Stella',
       position: 23,
       is_okay: true,

@@ -18,7 +18,7 @@ describe('Model', () => {
   let record: Record
 
   beforeEach(() => {
-    record = new Record().$take({
+    record = Record.take({
       id: 123,
       name: 'Stella',
       z_index: 23,

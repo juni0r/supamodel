@@ -30,11 +30,9 @@ describe('Attributes', () => {
       return `${this.givenName} ${this.familyName}`
     }
   }
-
   let subject: Subject
 
   const isoDate = '2020-02-02T02:02:02.020Z'
-
   const jsdate = new Date(isoDate)
   const dateTime = DateTime.fromISO(isoDate).toUTC()
 
@@ -49,7 +47,7 @@ describe('Attributes', () => {
 
   describe('accessors', () => {
     beforeEach(() => {
-      subject = new Subject().$take(attributes)
+      subject = Subject.take(attributes)
     })
 
     it('can get', () => {
