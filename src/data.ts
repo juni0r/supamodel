@@ -2,7 +2,7 @@ import {
   withServiceRole,
   defineModelConfig,
   defineModel,
-  baseModel,
+  BaseModel,
   config,
   datetime,
   transform,
@@ -12,7 +12,7 @@ import {
 import type { Database } from '../supabase/types'
 import type { Scoped } from './types'
 
-export class Model extends baseModel<Database>() {
+export class Model extends BaseModel {
   static findAll(scoped?: Scoped) {
     console.log(`Finding all ${this.tableName}...`)
     return super.findAll(scoped)

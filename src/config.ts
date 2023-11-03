@@ -33,7 +33,7 @@ export function defineModelConfig<DB = any>(options: ModelConfigOptions<DB>) {
 
   Object.assign(
     _config,
-    { base: baseModel<DB>(), primaryKey: 'id' as const, naming: snakeCase },
+    { base: BaseModel, primaryKey: 'id' as const, naming: snakeCase },
     config,
   )
   Object.assign(_config.base, { client, serviceClient })
