@@ -59,23 +59,25 @@ export function defineModel<Attrs extends Attributes = Attributes>(
   })
 
   type Schema = SchemaOf<Attrs>
-
-  return model as Extend<
+  type Model = Schema &
+    Extend<
+      model,
+      {
+        $model: ModelClass
+        $get<K extends keyof Schema>(key: K): Schema[K]
+        $set<K extends keyof Schema>(key: K, value: Schema[K]): void
+        $initial<K extends keyof Schema>(key: K): Schema[K]
+        $didChange<K extends keyof Schema>(key: K): boolean
+      }
+    >
+  type ModelClass = Extend<
     typeof model,
     {
-      new (...args: unknown[]): Schema &
-        Extend<
-          model,
-          {
-            $model: typeof model
-            $get<K extends keyof Schema>(key: K): Schema[K]
-            $set<K extends keyof Schema>(key: K, value: Schema[K]): void
-            $initial<K extends keyof Schema>(key: K): Schema[K]
-            $didChange<K extends keyof Schema>(key: K): boolean
-          }
-        >
+      new (...args: unknown[]): Model
     }
   >
+
+  return model as ModelClass
 }
 
 export function withServiceRole(result: () => unknown) {
