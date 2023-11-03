@@ -1,7 +1,3 @@
-// if (typeof window === 'undefined') {
-//   require('./luxon.inspect.custom')
-// }
-//
 import 'dotenv/config'
 
 export type * from './types'

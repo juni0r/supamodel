@@ -7,11 +7,11 @@ const {
   SUPABASE_SERVICE_KEY,
 } = process.env
 
-const client = createClientMock(SUPABASE_URL, SUPABASE_KEY)
+export const client = createClientMock(SUPABASE_URL, SUPABASE_KEY)
 
-const serviceClient = SUPABASE_SERVICE_KEY
+export const serviceClient = SUPABASE_SERVICE_KEY
   ? createClientMock(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-  : undefined
+  : client
 
 export default (config: Partial<ModelConfigOptions> = {}) =>
   defineModelConfig({ client, serviceClient, ...config })

@@ -1,3 +1,4 @@
+import './luxon.inspect.custom'
 import {
   withServiceRole,
   defineModelConfig,
@@ -39,18 +40,16 @@ class Record extends defineModel({
   }
 }
 
-console.log((Record.client as any).supabaseKey)
-
 withServiceRole(async () => {
-  console.log((Record.client as any).supabaseKey)
-
   const records = await Record.findAll((where) =>
     where
       .ilike('email', '%@mail.com')
       .gte('date_of_birth', '1974-01-01')
       .eq('is_okay', false),
   )
-  console.dir(records)
+  records.forEach((record) => console.log(record))
+
+  console.log('\nUpdating record...')
 
   const record = await Record.find(+process.argv[2])
   console.log(record)
@@ -72,6 +71,4 @@ withServiceRole(async () => {
   } else {
     console.warn('🖐️ ', issues)
   }
-}).then(() => {
-  console.log((Record.client as any).supabaseKey)
 })
