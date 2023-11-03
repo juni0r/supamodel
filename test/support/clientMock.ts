@@ -1,31 +1,24 @@
 import { SupabaseClient } from '@supabase/supabase-js'
-import { GenericSchema } from '@supabase/supabase-js/src/lib/types'
+
+declare module '@supabase/supabase-js' {
+  class SupabaseClient {
+    get $mock(): ClientMock
+
+    $on(
+      command: RegExp | string,
+      handler: (match: RegExpMatchArray) => unknown,
+    ): void
+
+    $reset(): void
+  }
+}
 
 const createClientMock = <DB>(...args: [string, string]) =>
   new ClientMock<DB>(...args)
 
 export default createClientMock
 
-declare module '@supabase/supabase-js' {
-  class SupabaseClient {
-    get $mock(): ClientMock
-    $on(
-      command: RegExp | string,
-      handler: (match: RegExpMatchArray) => unknown,
-    ): void
-    $reset(): void
-  }
-}
-
-export class ClientMock<
-  Database = any,
-  SchemaName extends string & keyof Database = 'public' extends keyof Database
-    ? 'public'
-    : string & keyof Database,
-  Schema extends GenericSchema = Database[SchemaName] extends GenericSchema
-    ? Database[SchemaName]
-    : any,
-> extends SupabaseClient<Database, SchemaName, Schema> {
+export class ClientMock<DB = any> extends SupabaseClient<DB> {
   commands = [] as string[]
   hooks = [] as CommandHook[]
 
@@ -33,7 +26,7 @@ export class ClientMock<
     return this as ClientMock
   }
 
-  from<TableName extends string & keyof Schema['Tables']>(relation: TableName) {
+  from(relation: string) {
     const collector = ['from', relation]
 
     return commandProxy(collector, () => {
