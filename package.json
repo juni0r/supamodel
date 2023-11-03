@@ -25,7 +25,6 @@
     "**/*": "prettier --write --ignore-unknown"
   },
   "scripts": {
-    "data": "tsx src/data.ts",
     "build": "tsup",
     "test": "vitest run",
     "test:watch": "vitest",
