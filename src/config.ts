@@ -1,5 +1,6 @@
 import type { ModelConfig, ModelConfigOptions } from './types'
-import { BaseModel, SupabaseClient, createClient, snakeCase } from '.'
+import { createClient, SupabaseClient } from './supabase'
+import { BaseModel, snakeCase } from '.'
 import { New } from './util'
 
 export function baseModel<DB = any>() {

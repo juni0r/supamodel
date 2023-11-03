@@ -1,5 +1,5 @@
 import type { ID } from './types'
-import type { PostgrestError } from '@supabase/postgrest-js'
+import type { PostgrestError } from './supabase'
 
 const { assign } = Object
 

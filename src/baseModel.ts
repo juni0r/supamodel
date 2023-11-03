@@ -1,4 +1,4 @@
-import { SupabaseClient } from '@supabase/supabase-js'
+import { SupabaseClient } from './supabase'
 
 import { Issues } from './issues'
 import { defaults } from './schema'
