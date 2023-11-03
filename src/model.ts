@@ -1,4 +1,3 @@
-import { SupabaseClient } from '@supabase/supabase-js'
 import forEach from 'lodash.foreach'
 
 import config from './config'
@@ -14,14 +13,14 @@ import type {
   ModelConfig,
 } from './types'
 
-export function defineModel<Attrs extends Attributes = Attributes, DB = any>(
+export function defineModel<Attrs extends Attributes = Attributes>(
   attributes: Attrs,
-  options: Partial<ModelConfig<DB>> = {},
+  options: Partial<ModelConfig> = {},
 ) {
   const { base, tableName, client, serviceClient, naming, primaryKey } = {
     ...config(),
     ...options,
-  } as ModelConfig<DB>
+  } as ModelConfig
 
   class model extends base {
     static attributes = attributes
@@ -35,7 +34,7 @@ export function defineModel<Attrs extends Attributes = Attributes, DB = any>(
   }
 
   if (tableName) model.tableName = tableName
-  if (client) model.client = client as SupabaseClient
+  if (client) model.client = client
   if (serviceClient) model.serviceClient = serviceClient
 
   const { prototype, transforms, columnNameOf, attributeNameOf } = model

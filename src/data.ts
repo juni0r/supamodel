@@ -12,7 +12,7 @@ import {
 import type { Database } from '../supabase/types'
 import type { Scoped } from './types'
 
-class Model extends baseModel<Database>() {
+export class Model extends baseModel<Database>() {
   static findAll(scoped?: Scoped) {
     console.log(`Finding all ${this.tableName}...`)
     return super.findAll(scoped)
@@ -26,12 +26,12 @@ const {
 } = process.env
 
 defineModelConfig<Database>({
+  base: Model,
   client: {
     url: SUPABASE_URL,
     key: SUPABASE_KEY,
     serviceKey: SUPABASE_SERVICE_KEY,
   },
-  base: Model,
 })
 
 console.dir(config(), { depth: 1 })
@@ -64,7 +64,6 @@ withServiceRole(async () => {
       .eq('is_okay', false),
   )
   console.dir(records)
-  console.log((Record.client as any).supabaseKey)
 
   const record = await Record.find(+process.argv[2])
   console.log(record)
@@ -86,4 +85,6 @@ withServiceRole(async () => {
   } else {
     console.warn('🖐️ ', issues)
   }
+}).then(() => {
+  console.log((Record.client as any).supabaseKey)
 })

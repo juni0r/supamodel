@@ -29,8 +29,9 @@ export function attr<Z extends ZodSchema>(
 }
 
 export const datetime = () =>
-  custom<DateTime>((val: unknown) =>
-    val instanceof DateTime ? val.isValid : false,
+  custom<DateTime>(
+    (val: unknown) => (val instanceof DateTime ? val.isValid : false),
+    { message: 'Invalid DateTime', params: { code: 'invalid-datetime' } },
   )
 
 export const transform = {
