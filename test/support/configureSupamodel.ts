@@ -1,17 +1,10 @@
 import createClientMock from '../support/clientMock'
 import { ModelConfigOptions, configureSupamodel } from '../../src'
 
-const {
-  SUPABASE_URL = '',
-  SUPABASE_KEY = '',
-  SUPABASE_SERVICE_KEY,
-} = process.env
-
-export const client = createClientMock(SUPABASE_URL, SUPABASE_KEY)
-
-export const serviceClient = SUPABASE_SERVICE_KEY
-  ? createClientMock(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-  : client
+export const client = createClientMock(
+  'http://localhost:54321',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpcSeCreT',
+)
 
 export default (config: Partial<ModelConfigOptions> = {}) =>
-  configureSupamodel({ client, serviceClient, ...config })
+  configureSupamodel({ client, ...config })
