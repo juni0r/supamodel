@@ -8,7 +8,7 @@
   ],
   "author": "andreas.korth@gmail.com",
   "license": "MIT",
-  "version": "1.0.0",
+  "version": "0.3.0",
   "engines": {
     "node": ">=20.7.0 <21.0.0"
   },

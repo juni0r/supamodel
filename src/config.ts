@@ -17,7 +17,7 @@ export function config<DB>() {
 }
 export default config
 
-export function configureSupabaseModel<DB = any>(
+export function configureSupamodel<DB = any>(
   options: ModelConfigOptions<DB>,
 ): ModelConfig<DB> {
   let { client = supabaseEnv(), serviceClient, ...config } = options
@@ -58,7 +58,7 @@ function supabaseEnv() {
 
   if (!(url && key))
     throw new Error(
-      `Failed to auto-configure supabase-model. Set SUPABASE_URL and SUPABASE_KEY environment variables, or specify 'client' option to  ${configureSupabaseModel.name}.`,
+      `Failed to auto-configure supabase-model. Set SUPABASE_URL and SUPABASE_KEY environment variables, or specify 'client' option to  ${configureSupamodel.name}.`,
     )
 
   return { url, key, serviceKey }

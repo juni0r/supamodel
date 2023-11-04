@@ -2,10 +2,10 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { defineModel as model, $, datetime, transform } from '../src'
 import { string, date } from 'zod'
 
-import defineModelConfig from './support/defineModelConfig'
+import configureSupamodel from './support/configureSupamodel'
 
 describe('Validation', () => {
-  defineModelConfig()
+  configureSupamodel()
 
   class Subject extends model({
     givenName: $(string().trim().min(1)),

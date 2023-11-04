@@ -1,5 +1,5 @@
 import createClientMock from '../support/clientMock'
-import { ModelConfigOptions, defineModelConfig } from '../../src'
+import { ModelConfigOptions, configureSupamodel } from '../../src'
 
 const {
   SUPABASE_URL = '',
@@ -14,4 +14,4 @@ export const serviceClient = SUPABASE_SERVICE_KEY
   : client
 
 export default (config: Partial<ModelConfigOptions> = {}) =>
-  defineModelConfig({ client, serviceClient, ...config })
+  configureSupamodel({ client, serviceClient, ...config })

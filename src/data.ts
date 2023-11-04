@@ -1,7 +1,7 @@
 import './luxon.inspect.custom'
 import {
   withServiceRole,
-  defineModelConfig,
+  configureSupamodel,
   defineModel,
   BaseModel,
   config,
@@ -20,7 +20,7 @@ export class Model extends BaseModel {
   }
 }
 
-defineModelConfig<Database>({ base: Model })
+configureSupamodel<Database>({ base: Model })
 
 console.dir(config(), { depth: 1 })
 

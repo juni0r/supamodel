@@ -2,10 +2,10 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { defineModel, $, transform } from '../src'
 import { string, date, number, boolean } from 'zod'
 
-import defineModelConfig from './support/defineModelConfig'
+import configureSupamodel from './support/configureSupamodel'
 
 describe('Model', () => {
-  defineModelConfig()
+  configureSupamodel()
 
   class Record extends defineModel({
     id: $(number().int()),

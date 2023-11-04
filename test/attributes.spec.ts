@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { defineModel, $, z, datetime, transform, DateTime, ID } from '../src'
 import { Expect } from './support/util'
 
-import defineModelConfig from './support/defineModelConfig'
+import configureSupamodel from './support/configureSupamodel'
 
 const {
   string,
@@ -16,7 +16,7 @@ const {
 } = z
 
 describe('Attributes', () => {
-  defineModelConfig()
+  configureSupamodel()
 
   class Subject extends defineModel({
     id: $(number()),
