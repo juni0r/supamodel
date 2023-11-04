@@ -1,6 +1,6 @@
 import type { ModelConfig, ModelConfigOptions } from './types'
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { New, snakeCase } from './util'
 import { BaseModel } from './baseModel'
 
@@ -22,7 +22,7 @@ export function configureSupamodel<DB = any>(
 ): ModelConfig<DB> {
   let { client = supabaseEnv(), ...config } = options
 
-  if (!(client instanceof SupabaseClient)) {
+  if (!isSupabaseClient(client)) {
     const { url, key } = client
 
     client = createClient<DB>(url, key)
@@ -49,4 +49,10 @@ function supabaseEnv() {
     )
 
   return { url, key }
+}
+
+function isSupabaseClient(
+  object: any,
+): object is SupabaseClient<any, any, any> {
+  return 'supabaseUrl' in object && 'supabaseKey' in object
 }
