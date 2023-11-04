@@ -13,12 +13,13 @@ import type {
   ModelOptions,
 } from './types'
 import BaseModel from './baseModel'
+import { SupabaseClient } from '@supabase/supabase-js'
 
 export function defineModel<Attrs extends Attributes>(
   attributes: Attrs,
   _options: Partial<ModelOptions> = {},
 ) {
-  const { base, naming, primaryKey, tableName, client, serviceClient } = {
+  const { base, naming, primaryKey, tableName, client } = {
     ...config(),
     ..._options,
   }
@@ -35,7 +36,6 @@ export function defineModel<Attrs extends Attributes>(
   }
 
   if (client) model.client = client
-  if (serviceClient) model.serviceClient = serviceClient
   if (tableName) model.tableName = tableName
 
   defineAttributes(model, attributes)
@@ -85,6 +85,6 @@ function defineAttributes(model: typeof BaseModel, attributes: Attributes) {
   })
 }
 
-export function withServiceRole(result: () => unknown) {
-  return config().base.withServiceRole(result)
+export function withClient<DB>(client: SupabaseClient<DB>, execute: () => any) {
+  return config().base.withClient(client, execute)
 }

@@ -1,4 +1,4 @@
-import { SupabaseClient } from './supabase'
+import { SupabaseClient } from '@supabase/supabase-js'
 
 import { Issues } from './issues'
 import { defaults } from './schema'
@@ -28,7 +28,6 @@ import type {
 
 export class BaseModel {
   static client: SupabaseClient<any, any, any>
-  static serviceClient: SupabaseClient<any, any, any>
 
   static attributes: Attributes
   static schema: ZodSchemaOf<Attributes>
@@ -229,17 +228,14 @@ export class BaseModel {
     return new this().$take(data) as InstanceType<T>
   }
 
-  static async withServiceRole<Result = unknown>(
+  static async withClient<DB = any>(
     this: typeof BaseModel,
-    result: () => Result,
+    client: SupabaseClient<DB>,
+    result: () => any,
   ) {
-    if (!this.serviceClient)
-      throw new Error('Service client is not configured.')
-
     const ownClient = Object.getOwnPropertyDescriptor(this, 'client')?.value
-
     try {
-      this.client = this.serviceClient
+      this.client = client
       return await result()
     } finally {
       if (ownClient) this.client = ownClient

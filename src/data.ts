@@ -1,6 +1,6 @@
 import './luxon.inspect.custom'
 import {
-  withServiceRole,
+  withClient,
   configureSupamodel,
   defineModel,
   BaseModel,
@@ -12,6 +12,9 @@ import {
 } from '.'
 import type { Database } from '../supabase/types'
 import type { Scoped } from './types'
+import { createClient } from '@supabase/supabase-js'
+
+const { SUPABASE_URL, SUPABASE_SERVICE_KEY } = process.env
 
 export class Model extends BaseModel {
   static findAll(scoped?: Scoped) {
@@ -40,7 +43,7 @@ class Record extends defineModel({
   }
 }
 
-withServiceRole(async () => {
+withClient(createClient(SUPABASE_URL!, SUPABASE_SERVICE_KEY!), async () => {
   const records = await Record.findAll((where) =>
     where
       .ilike('email', '%@mail.com')

@@ -1,12 +1,14 @@
 import type { ZodObject, TypeOf, ZodSchema } from 'zod'
-import type {
-  SupabaseClient,
+import type { SupabaseClient } from '@supabase/supabase-js'
+import {
   GenericSchema,
   GenericTable,
   GenericView,
+} from '@supabase/supabase-js/dist/module/lib/types'
+import {
   PostgrestFilterBuilder,
   PostgrestQueryBuilder,
-} from './supabase'
+} from '@supabase/postgrest-js'
 import type BaseModel from './baseModel'
 
 export type Extend<T, E> = E & Omit<T, keyof E>
@@ -20,11 +22,6 @@ export type mayBe<Type> = Type | null | undefined
 
 export type ID = string | number
 
-export interface Clients<DB = any> {
-  client: SupabaseClient<DB>
-  serviceClient: SupabaseClient<DB>
-}
-
 export type ModelConfigOptions<DB = any> = {
   base?: typeof BaseModel
   client?:
@@ -34,15 +31,13 @@ export type ModelConfigOptions<DB = any> = {
         key: string
         serviceKey?: string
       }
-  serviceClient?: SupabaseClient<DB>
   primaryKey?: string
   naming?: KeyMapper
 }
 
-export interface ModelConfig<DB = any> extends Clients<DB> {
+export interface ModelConfig<DB = any> {
   base: typeof BaseModel
   client: SupabaseClient<DB>
-  serviceClient: SupabaseClient<DB>
   primaryKey: string
   naming: KeyMapper
 }

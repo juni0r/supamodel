@@ -7,9 +7,8 @@ export { DateTime } from 'luxon'
 
 export { BaseModel } from './baseModel'
 export { Issues } from './issues'
-export { createClient, SupabaseClient } from './supabase'
 export { configureSupamodel, config, baseModel } from './config'
-export { defineModel, withServiceRole } from './model'
+export { defineModel, withClient } from './model'
 export { transform, datetime, attr, attr as $ } from './schema'
 export { camelCase, snakeCase, kebabCase, pluralize } from './util'
 export {
