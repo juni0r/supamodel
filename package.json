@@ -40,14 +40,15 @@
     "build": "tsup",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
     "test:check": "pnpm lint && pnpm typecheck && pnpm test",
+    "test:coverage": "vitest run --coverage",
+    "test:coverage:serve": "pnpm exec http-server -a localhost -o ./coverage",
     "typecheck": "tsc --project tsconfig.check.json",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
-    "serve:coverage": "pnpm exec http-server -a localhost -o ./coverage",
     "prepare": "husky install",
-    "release": "release-it"
+    "release": "pnpm test:check && release-it",
+    "release:pre": "pnpm test:check && release-it --preRelease"
   },
   "dependencies": {
     "@supabase/postgrest-js": "^1.8.5",
