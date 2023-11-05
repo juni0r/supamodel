@@ -17,9 +17,12 @@ import { createClient } from '@supabase/supabase-js'
 const { SUPABASE_URL, SUPABASE_SERVICE_KEY } = process.env
 
 export class Model extends BaseModel {
-  static findAll(scoped?: Scoped) {
+  static findAll<T extends typeof Model>(
+    this: T,
+    scoped?: Scoped,
+  ): Promise<InstanceType<T>[]> {
     console.log(`Finding all ${this.tableName}...`)
-    return super.findAll(scoped)
+    return super.findAll<T>(scoped)
   }
 }
 

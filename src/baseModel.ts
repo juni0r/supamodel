@@ -175,12 +175,14 @@ export class BaseModel {
     return new this().$take(values) as InstanceType<T>
   }
 
-  static scoped<T = AnyObject>(filter: FilterBuilder<T>): FilterBuilder<T> {
+  static scoped<T>(filter: FilterBuilder<T>): FilterBuilder<T> {
     return filter
   }
 
-  static select(columns?: string) {
-    return this.scoped(this.client.from(this.tableName).select(columns))
+  static select<T extends typeof BaseModel>(this: T, columns = '*' as const) {
+    return this.scoped(
+      this.client.from(this.tableName).select<typeof columns, T>(columns),
+    )
   }
 
   static insert(record: AnyObject) {
@@ -202,7 +204,7 @@ export class BaseModel {
     )
   }
 
-  static async findAll(scoped?: Scoped) {
+  static async findAll<T extends typeof BaseModel>(this: T, scoped?: Scoped) {
     let query = this.select()
 
     if (scoped) query = scoped(query)
@@ -211,7 +213,7 @@ export class BaseModel {
     if (error) throw error
 
     return data.map((record) => {
-      return new this().$take(record)
+      return new this().$take(record) as InstanceType<T>
     })
   }
 
