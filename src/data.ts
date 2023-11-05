@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import './luxon.inspect.custom'
 import {
   withClient,

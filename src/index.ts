@@ -1,5 +1,3 @@
-import 'dotenv/config'
-
 export type * from './types'
 
 export { z, z as zod } from 'zod'
