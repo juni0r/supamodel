@@ -24,17 +24,30 @@
     ],
     "**/*": "prettier --write --ignore-unknown"
   },
+  "release-it": {
+    "git": {
+      "commitMessage": "chore(release): v${version}"
+    },
+    "github": {
+      "release": true,
+      "releaseName": "v${version}"
+    },
+    "npm": {
+      "publish": false
+    }
+  },
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:check": "pnpm run lint && pnpm run typecheck && pnpm run test",
+    "test:check": "pnpm lint && pnpm typecheck && pnpm test",
     "typecheck": "tsc --project tsconfig.check.json",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
     "serve:coverage": "pnpm exec http-server -a localhost -o ./coverage",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "release": "release-it"
   },
   "dependencies": {
     "@supabase/postgrest-js": "^1.8.5",
@@ -73,6 +86,7 @@
     "husky": "^8.0.3",
     "lint-staged": "^15.0.2",
     "prettier": "^3.0.3",
+    "release-it": "^16.2.1",
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
     "tsup": "^7.2.0",
