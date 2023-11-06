@@ -25,7 +25,7 @@ describe('Model', () => {
         name: 'Stella',
         layer: 478_300,
         isOkay: false,
-        date: new Date('2023-11-05T21:20:13.360Z'),
+        date: '2023-11-05T21:20:13.360Z',
       })
     })
   })
@@ -75,7 +75,7 @@ describe('Model', () => {
         name: 'Stella',
         layer: 478_300,
         isOkay: false,
-        date: new Date('2023-11-05T21:20:13.360Z'),
+        date: '2023-11-05T21:20:13.360Z',
       })
     })
   })

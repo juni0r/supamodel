@@ -11,6 +11,7 @@ import {
   RecordNotDeleted,
 } from './errors'
 
+import result from 'lodash.result'
 import forEach from 'lodash.foreach'
 import mapValues from 'lodash.mapvalues'
 
@@ -168,7 +169,7 @@ export class BaseModel {
     return Object.entries(this.$attributes).reduce(
       (json, [column, value]) => ({
         ...json,
-        [attributeNameOf[column]]: value,
+        [attributeNameOf[column]]: result(value, 'toJSON', value),
       }),
       {},
     )
