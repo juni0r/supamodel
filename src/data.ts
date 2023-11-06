@@ -12,7 +12,7 @@ import {
   z,
 } from '.'
 import type { Database } from '../supabase/types'
-import type { Scoped } from './types'
+import type { AsyncResult, Scoped } from './types'
 import { createClient } from '@supabase/supabase-js'
 
 const { SUPABASE_URL, SUPABASE_SERVICE_KEY } = process.env
@@ -21,7 +21,7 @@ export class Model extends BaseModel {
   static findAll<T extends typeof Model>(
     this: T,
     scoped?: Scoped,
-  ): Promise<InstanceType<T>[]> {
+  ): AsyncResult<InstanceType<T>[]> {
     console.log(`Finding all ${this.tableName}...`)
     return super.findAll<T>(scoped)
   }
@@ -48,17 +48,23 @@ class Record extends defineModel({
 }
 
 withClient(createClient(SUPABASE_URL!, SUPABASE_SERVICE_KEY!), async () => {
-  const records = await Record.findAll((where) =>
+  const { data: records, error: recordsError } = await Record.findAll((where) =>
     where
       .ilike('email', '%@mail.com')
       .gte('date_of_birth', '1974-01-01')
       .eq('is_okay', false),
   )
+  if (recordsError) throw recordsError
+
   records.forEach((record) => console.log(record))
 
   console.log('\nUpdating record...')
 
-  const record = await Record.find(+process.argv[2])
+  const { data: record, error: recordError } = await Record.find(
+    +process.argv[2],
+  )
+  if (recordError) throw recordError
+
   console.log(record)
 
   if (record.lastName === 'Goldbacke') {
@@ -71,11 +77,11 @@ withClient(createClient(SUPABASE_URL!, SUPABASE_SERVICE_KEY!), async () => {
     record.data = { weniger: 'drin' }
   }
 
-  const issues = await record.save()
-  if (issues.none) {
+  const { error: saveError } = await record.save()
+  if (!saveError) {
     console.log('👍🏼 Updated')
     console.log(record)
   } else {
-    console.warn('🖐️ ', issues)
+    console.warn('🖐️ ', saveError.issues)
   }
 })

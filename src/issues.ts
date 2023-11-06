@@ -1,12 +1,10 @@
 import { ZodError, type ZodIssue } from 'zod'
 
 export class Issues extends Array<ZodIssue> {
+  static None = Object.freeze(this.from([]))
+
   static from(issues: ZodIssue[]) {
     return Object.setPrototypeOf(issues, this.prototype) as Issues
-  }
-
-  static none() {
-    return this.from([])
   }
 
   static handle(error: unknown) {

@@ -9,9 +9,4 @@ export { configureSupamodel, config, baseModel } from './config'
 export { defineModel, withClient } from './model'
 export { transform, datetime, attr, attr as $ } from './schema'
 export { camelCase, snakeCase, kebabCase, pluralize } from './util'
-export {
-  RecordNotFound,
-  RecordNotCreated,
-  RecordNotUpdated,
-  RecordNotDeleted,
-} from './errors'
+export { RecordNotFound, RecordNotSaved, RecordNotDeleted } from './errors'

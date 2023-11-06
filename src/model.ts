@@ -1,9 +1,12 @@
-import forEach from 'lodash.foreach'
+import { SupabaseClient } from '@supabase/supabase-js'
 
+import BaseModel from './baseModel'
+import { zodSchemaOf } from './schema'
+import { Dict, identity } from './util'
 import config from './config'
 
-import { Dict } from './util'
-import { identity, zodSchemaOf } from './schema'
+import forEach from 'lodash.foreach'
+import mapValues from 'lodash.mapvalues'
 
 import type {
   Attributes,
@@ -12,8 +15,6 @@ import type {
   Extend,
   ModelOptions,
 } from './types'
-import BaseModel from './baseModel'
-import { SupabaseClient } from '@supabase/supabase-js'
 
 export function defineModel<Attrs extends Attributes>(
   attributes: Attrs,
@@ -65,24 +66,27 @@ export function defineModel<Attrs extends Attributes>(
 function defineAttributes(model: typeof BaseModel, attributes: Attributes) {
   const { prototype, transforms, columnNameOf, attributeNameOf } = model
 
-  forEach(attributes, (option, attr) => {
-    const column = (option.column ??= model.naming(attr))
+  forEach(
+    mapValues(attributes, (option, attr) =>
+      option.column ? option : { ...option, column: model.naming(attr) },
+    ),
 
-    columnNameOf[attr] = column
-    attributeNameOf[column] = attr
+    ({ column, take = identity, emit = identity }, attr) => {
+      attributeNameOf[column] = attr
+      columnNameOf[attr] = column
 
-    const { take = identity, emit = identity } = option
-    transforms[column] = { take, emit }
+      transforms[column] = { take, emit }
 
-    Object.defineProperty(prototype, attr, {
-      get() {
-        return this.$get(attr)
-      },
-      set(value: unknown) {
-        this.$set(attr, value)
-      },
-    })
-  })
+      Object.defineProperty(prototype, attr, {
+        get() {
+          return this.$get(attr)
+        },
+        set(value: unknown) {
+          this.$set(attr, value)
+        },
+      })
+    },
+  )
 }
 
 export function withClient<DB>(client: SupabaseClient<DB>, execute: () => any) {

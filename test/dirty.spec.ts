@@ -40,6 +40,7 @@ describe('Model', () => {
     subject.name = 'Stella'
     expect(subject.$isDirty).toBe(false)
     expect(subject.$didChange('name')).toBe(false)
+    expect(subject.$initial('name')).toBe('Stella')
   })
 
   it('is dirty when date property is changed', () => {

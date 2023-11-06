@@ -1,43 +1,44 @@
-import type { ID } from './types'
 import type { PostgrestError } from '@supabase/postgrest-js'
+import type { ZodIssue } from 'zod'
+import type { ID } from './types'
+import { Issues } from './issues'
 
-const { assign } = Object
+export class SupamodelError extends Error {
+  cause?: Error
 
-export class RecordNotFound extends Error {
-  constructor(tableName: string, id: ID) {
-    super(`No ${tableName} with primary key ${JSON.stringify(id)}`) // (1)
-    this.name = 'RecordNotFound' // (2)
+  get name() {
+    return this.constructor.name
+  }
+
+  constructor(cause: string | Error | PostgrestError) {
+    if (typeof cause === 'string') super(cause)
+    else {
+      super(cause.message)
+      this.cause = cause as Error
+    }
   }
 }
 
-export class DatabaseError extends Error implements PostgrestError {
-  details!: string
-  hint!: string
-  code!: string
-
-  constructor({ message, ...error }: PostgrestError) {
-    super(message) // (1)
-    assign(this, error, { name: 'DatabaseError' }) // (3)
+export class RecordNotFound extends SupamodelError {
+  constructor(tableName: string, id: ID, cause?: PostgrestError | null) {
+    super(cause ?? `No ${tableName} with primary key ${JSON.stringify(id)}`)
   }
 }
 
-export class RecordNotCreated extends DatabaseError {
-  constructor({ message, ...error }: PostgrestError) {
-    super({ message: `Record not created: ${message}`, ...error }) // (1)
-    assign(this, error, { name: 'RecordNotCreated' }) // (3)
+export class RecordInvalid extends SupamodelError {
+  issues: Issues
+
+  constructor(issues: Issues | ZodIssue[]) {
+    const { length } = issues
+    super(
+      `Validation failed with ${length < 2 ? '1 issue' : `${length} issues`}.`,
+    )
+    this.issues = issues instanceof Issues ? issues : Issues.from(issues)
   }
 }
 
-export class RecordNotUpdated extends DatabaseError {
-  constructor({ message, ...error }: PostgrestError) {
-    super({ message: `Record not updated: ${message}`, ...error }) // (1)
-    assign(this, error, { name: 'RecordNotUpdated' }) // (3)
-  }
+export class RecordNotSaved extends SupamodelError {
+  issues = Issues.None
 }
 
-export class RecordNotDeleted extends DatabaseError {
-  constructor({ message, ...error }: PostgrestError) {
-    super({ message: `Record not deleted: ${message}`, ...error }) // (1)
-    assign(this, error, { name: 'RecordNotDeleted' }) // (3)
-  }
-}
+export class RecordNotDeleted extends SupamodelError {}

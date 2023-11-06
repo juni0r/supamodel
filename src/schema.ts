@@ -19,8 +19,6 @@ export function zodSchemaOf<A extends Attributes>(attributes: A) {
   return object(mapValues(attributes, 'type') as ShapeOf<A>)
 }
 
-export const identity = <T>(v: T) => v
-
 export function attr<Z extends ZodSchema>(
   type: Z,
   options?: AttributeOptions<Z>,

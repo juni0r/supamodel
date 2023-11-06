@@ -1,35 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { defineModel, $, z, datetime, transform, DateTime, ID } from '../src'
 import { Expect } from './support/util'
+import { z, DateTime, ID } from '../src'
+import { Subject } from './models'
 
-import configureSupamodel from './support/configureSupamodel'
-
-const {
-  string,
-  date,
-  number,
-  ZodString,
-  ZodNumber,
-  ZodDate,
-  ZodEffects,
-  ZodDefault,
-} = z
+const { ZodString, ZodNumber, ZodDate, ZodEffects, ZodDefault } = z
 
 describe('Attributes', () => {
-  configureSupamodel()
-
-  class Subject extends defineModel({
-    id: $(number()),
-    givenName: $(string()),
-    familyName: $(string(), { column: 'last_name' }),
-    score: $(number().default(0)),
-    date: $(date(), transform.date),
-    dateTime: $(datetime(), transform.datetime),
-  }) {
-    get name() {
-      return `${this.givenName} ${this.familyName}`
-    }
-  }
   let subject: Subject
 
   const isoDate = '2020-02-02T02:02:02.020Z'

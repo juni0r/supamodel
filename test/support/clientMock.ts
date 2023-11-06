@@ -7,9 +7,9 @@ declare module '@supabase/supabase-js' {
     $on(
       command: RegExp | string,
       handler: (match: RegExpMatchArray) => unknown,
-    ): void
+    ): ClientMock
 
-    $reset(): void
+    $reset(): ClientMock
   }
 }
 
@@ -23,7 +23,7 @@ export class ClientMock<DB = any> extends SupabaseClient<DB> {
   hooks = [] as CommandHook[]
 
   get $mock() {
-    return this as ClientMock
+    return this
   }
 
   from(relation: string) {
@@ -48,11 +48,13 @@ export class ClientMock<DB = any> extends SupabaseClient<DB> {
       command = new RegExp(command)
     }
     this.hooks.push(new CommandHook(command, handler))
+    return this
   }
 
   $reset() {
     this.commands = []
     this.hooks = []
+    return this
   }
 }
 
@@ -62,6 +64,12 @@ class CommandHook {
     public resolve: (md: RegExpMatchArray) => unknown,
   ) {}
   execute(command: string) {
+    // console.log(
+    //   'execute hook:',
+    //   `[${!!command.match(this.regexp)}]`,
+    //   this.regexp,
+    //   command,
+    // )
     const matched = command.match(this.regexp)
     return matched && this.resolve(matched)
   }

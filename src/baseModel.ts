@@ -2,13 +2,13 @@ import { SupabaseClient } from '@supabase/supabase-js'
 
 import { Issues } from './issues'
 import { defaults } from './schema'
-import { pluralize, TrackedDirty, type Dict } from './util'
+import { pluralize, TrackedDirty, failWith, asData, type Dict } from './util'
 import {
-  DatabaseError,
-  RecordNotCreated,
-  RecordNotDeleted,
+  SupamodelError,
   RecordNotFound,
-  RecordNotUpdated,
+  RecordInvalid,
+  RecordNotSaved,
+  RecordNotDeleted,
 } from './errors'
 
 import forEach from 'lodash.foreach'
@@ -89,13 +89,14 @@ export class BaseModel {
   }
 
   $take<T extends BaseModel>(this: T, values: AnyObject) {
+    const { $attributes } = this
     const { transforms } = this.$model
 
     forEach(values, (value, column) => {
-      this.$attributes[column] = transforms[column].take(value)
+      $attributes[column] = transforms[column].take(value)
     })
 
-    this.$attributes.$commit()
+    $attributes.$commit()
 
     return this
   }
@@ -119,12 +120,14 @@ export class BaseModel {
     } catch (error) {
       return Issues.handle(error)
     }
-    return Issues.none()
+    return Issues.None
   }
 
-  async save() {
+  async save<T extends BaseModel>(this: T) {
     const issues = this.validate()
-    if (issues.any) return issues
+    if (issues.any) {
+      return failWith(RecordInvalid, issues)
+    }
 
     const { client, tableName, primaryKey } = this.$model
 
@@ -138,21 +141,25 @@ export class BaseModel {
       .select()
       .maybeSingle()
 
-    if (error)
-      throw this.$isPersisted
-        ? new RecordNotUpdated(error)
-        : new RecordNotCreated(error)
+    if (error) {
+      return failWith(RecordNotSaved, error)
+    }
 
     this.$attributes.$commit()
     this.$take(data)
 
-    return issues
+    return asData(this)
   }
 
-  async delete() {
-    const { error } = await this.$model.delete(this.$id)
-    if (error) throw new RecordNotDeleted(error)
+  async delete<T extends BaseModel>(this: T) {
     this.$attributes.$revert()
+
+    const { error } = await this.$model.delete(this.$id)
+    if (error) {
+      return failWith(RecordNotDeleted, error)
+    }
+
+    return asData(Object.defineProperty(this, '$isDeleted', { value: true }))
   }
 
   toJSON(): ToJSON {
@@ -210,11 +217,11 @@ export class BaseModel {
     if (scoped) query = scoped(query)
 
     const { error, data } = await query
-    if (error) throw error
+    if (error) return failWith(SupamodelError, error)
 
-    return data.map((record) => {
-      return new this().$take(record) as InstanceType<T>
-    })
+    return asData(
+      data.map((record) => new this().$take(record) as InstanceType<T>),
+    )
   }
 
   static async find<T extends typeof BaseModel>(this: T, id: ID) {
@@ -224,10 +231,11 @@ export class BaseModel {
       .eq(String(this.primaryKey), id)
       .maybeSingle()
 
-    if (error) throw new DatabaseError(error)
-    if (!data) throw new RecordNotFound(this.tableName, id)
+    if (!data) {
+      return failWith(RecordNotFound, this.tableName, id, error)
+    }
 
-    return new this().$take(data) as InstanceType<T>
+    return asData(new this().$take(data) as InstanceType<T>)
   }
 
   static async withClient<DB = any>(

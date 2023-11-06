@@ -1,15 +1,18 @@
 import type { ZodObject, TypeOf, ZodSchema } from 'zod'
+
 import type { SupabaseClient } from '@supabase/supabase-js'
-import {
+import type {
   GenericSchema,
   GenericTable,
   GenericView,
 } from '@supabase/supabase-js/dist/module/lib/types'
-import {
+import type {
   PostgrestFilterBuilder,
   PostgrestQueryBuilder,
 } from '@supabase/postgrest-js'
-import type BaseModel from './baseModel'
+
+import type { BaseModel } from './baseModel'
+import type { SupamodelError } from './errors'
 
 export type Extend<T, E> = E & Omit<T, keyof E>
 
@@ -109,3 +112,11 @@ export type Json =
 export interface ToJSON {
   [key: string]: Json | undefined
 }
+
+export type Result<Data, Error = SupamodelError> =
+  | { data: Data; error: null }
+  | { error: Error; data: null }
+
+export type AsyncResult<Data, Error = SupamodelError> = Promise<
+  Result<Data, Error>
+>

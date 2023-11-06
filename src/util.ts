@@ -1,6 +1,7 @@
 import { underscore, camelize, dasherize, pluralize } from 'inflection'
 import { trackDirty, type DirtyDecorator } from './trackDirty'
 import type { AnyObject, KeyMapper } from './types'
+import { SupamodelError } from './errors'
 
 export { default as isEqual } from 'fast-deep-equal'
 
@@ -23,9 +24,27 @@ function keysOf<T extends object>(object: T) {
   return Object.keys(object) as (keyof T)[]
 }
 
+export const identity = <T>(val: T) => val
+
 const snakeCase: KeyMapper = (key: string) => underscore(key)
 const camelCase: KeyMapper = (key: string) => camelize(key, true)
 const kebabCase: KeyMapper = (key: string) => dasherize(key)
+
+export function asData<T>(data: T) {
+  return { data, error: null }
+}
+
+export function failWith<U extends { new (...args: any): SupamodelError }>(
+  error: U,
+  ...args: ConstructorParameters<U>
+): { error: U extends { new (...args: any): infer T } ? T : never; data: null }
+export function failWith<T>(error: T): { error: T; data: null }
+export function failWith(error: any, ...args: any) {
+  if (error === SupamodelError || error.prototype instanceof SupamodelError) {
+    error = new error(...args)
+  }
+  return { error, data: null }
+}
 
 export {
   New,
