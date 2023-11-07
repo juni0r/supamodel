@@ -45,6 +45,9 @@ export class BaseModel {
 
   $attributes = TrackedDirty()
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  constructor(..._args: any[]) {}
+
   get $model() {
     return this.constructor as typeof BaseModel
   }
@@ -188,12 +191,10 @@ export class BaseModel {
   }
 
   static update(id: ID, record: AnyObject) {
-    return this.scoped(
-      this.client
-        .from(this.tableName)
-        .update(record)
-        .eq(String(this.primaryKey), id),
-    )
+    return this.client
+      .from(this.tableName)
+      .update(record)
+      .eq(String(this.primaryKey), id)
   }
 
   static delete(id: ID) {

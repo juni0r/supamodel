@@ -1,6 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 
-import forEach from 'lodash.foreach'
+import merge from 'lodash.merge'
 
 import { baseModel } from './config'
 import { BaseModel } from './baseModel'
@@ -15,9 +15,11 @@ import type {
   Extend,
 } from './types'
 
+const { defineProperty } = Object
+
 export function defineModel<Attrs extends Attributes>(
   attributes: Attrs,
-  { naming, primaryKey, tableName, client }: Partial<ModelOptions> = {},
+  options: Partial<ModelOptions> = {},
 ) {
   class model extends baseModel {
     static attributes = attributes
@@ -25,19 +27,18 @@ export function defineModel<Attrs extends Attributes>(
     static schema = zodSchemaOf(attributes)
   }
 
-  if (client) model.client = client
-  if (naming) model.naming = naming
-  if (tableName) model.tableName = tableName
-  if (primaryKey) model.primaryKey = primaryKey
+  const { prototype, naming } = merge(model, options)
 
-  forEach(attributes, ({ column, take = identity, emit = identity }, key) => {
-    model.transforms[key] = {
-      column: column || model.naming(key),
-      take,
-      emit,
-    }
+  for (const key in attributes) {
+    const {
+      column = naming(key),
+      take = identity,
+      emit = identity,
+    } = attributes[key]
 
-    Object.defineProperty(model.prototype, key, {
+    model.transforms[key] = { column, take, emit }
+
+    defineProperty(prototype, key, {
       get() {
         return this.$get(key)
       },
@@ -45,26 +46,28 @@ export function defineModel<Attrs extends Attributes>(
         this.$set(key, value)
       },
     })
-  })
+  }
 
   type Schema = SchemaOf<Attrs>
-  type Model = Schema &
-    Extend<
-      model,
-      {
-        $model: ModelClass
-        $get<K extends keyof Schema>(key: K): Schema[K]
-        $set<K extends keyof Schema>(key: K, value: Schema[K]): void
-        $initial<K extends keyof Schema>(key: K): Schema[K]
-        $didChange<K extends keyof Schema>(key: K): boolean
-      }
-    >
+
   type ModelClass = Extend<
     typeof model,
     {
-      new (...args: unknown[]): Model
+      new (...args: any[]): Model
     }
   >
+
+  type Model = Extend<
+    model,
+    {
+      $model: ModelClass
+      $get<K extends keyof Schema>(key: K): Schema[K]
+      $set<K extends keyof Schema>(key: K, value: Schema[K]): void
+      $initial<K extends keyof Schema>(key: K): Schema[K]
+      $didChange<K extends keyof Schema>(key: K): boolean
+    }
+  > &
+    Schema
 
   return model as ModelClass
 }

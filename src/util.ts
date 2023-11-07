@@ -1,7 +1,7 @@
 import { underscore, camelize, dasherize, pluralize } from 'inflection'
 import { trackDirty, type DirtyDecorator } from './trackDirty'
 import { SupamodelError } from './errors'
-import type { AnyObject, KeyMapper } from './types'
+import type { AnyObject, FilterBuilder, KeyMapper } from './types'
 
 export { default as isEqual } from 'fast-deep-equal'
 
@@ -32,6 +32,13 @@ const kebabCase: KeyMapper = (key: string) => dasherize(key)
 
 export function asData<T>(data: T) {
   return { data, error: null }
+}
+
+export function scoped<T>(filter: FilterBuilder<T>, scope: Dict) {
+  return Object.entries(scope).reduce(
+    (where, [key, value]) => where.eq(key, value),
+    filter,
+  )
 }
 
 export function failWith<U extends { new (...args: any): SupamodelError }>(
