@@ -12,6 +12,8 @@ import {
 } from './errors'
 
 import result from 'lodash.result'
+import forEach from 'lodash.foreach'
+import mapValues from 'lodash.mapvalues'
 
 import type {
   Attributes,
@@ -22,10 +24,8 @@ import type {
   Scoped,
   ToJSON,
   ID,
+  Transform,
 } from './types'
-import { Transform } from './transform'
-import forEach from 'lodash.foreach'
-import mapValues from 'lodash.mapvalues'
 
 export class BaseModel {
   static client: SupabaseClient<any, any, any>
@@ -244,5 +244,4 @@ export class BaseModel {
     }
   }
 }
-
 export default BaseModel

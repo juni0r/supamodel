@@ -4,11 +4,16 @@ import forEach from 'lodash.foreach'
 
 import { baseModel } from './config'
 import { BaseModel } from './baseModel'
-import { Transform } from './transform'
 import { zodSchemaOf } from './schema'
-import { Dict } from './util'
+import { Dict, identity } from './util'
 
-import type { Attributes, SchemaOf, Extend, ModelOptions } from './types'
+import type {
+  ModelOptions,
+  Attributes,
+  Transform,
+  SchemaOf,
+  Extend,
+} from './types'
 
 export function defineModel<Attrs extends Attributes>(
   attributes: Attrs,
@@ -25,12 +30,12 @@ export function defineModel<Attrs extends Attributes>(
   if (tableName) model.tableName = tableName
   if (primaryKey) model.primaryKey = primaryKey
 
-  forEach(attributes, ({ column, take, emit }, key) => {
-    model.transforms[key] = new Transform(
-      column || model.naming(key),
+  forEach(attributes, ({ column, take = identity, emit = identity }, key) => {
+    model.transforms[key] = {
+      column: column || model.naming(key),
       take,
       emit,
-    )
+    }
 
     Object.defineProperty(model.prototype, key, {
       get() {
