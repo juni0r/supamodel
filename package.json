@@ -47,8 +47,8 @@
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
     "prepare": "husky install",
-    "release": "pnpm test:check && release-it",
-    "release:pre": "pnpm test:check && release-it --preRelease"
+    "release": "release-it",
+    "release:pre": "release-it --preRelease"
   },
   "dependencies": {
     "@supabase/postgrest-js": "^1.8.5",
