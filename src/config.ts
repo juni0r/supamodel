@@ -1,46 +1,29 @@
-import type { ModelConfig, ModelConfigOptions } from './types'
-
-import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { New, snakeCase } from './util'
+import { type SupabaseClient, createClient } from '@supabase/supabase-js'
+import { snakeCase } from './util'
 import { BaseModel } from './baseModel'
+import type { ModelConfigOptions } from './types'
 
-export let isConfigured = false
+export let baseModel: typeof BaseModel = BaseModel
+export default baseModel
 
-export const _config = New<ModelConfig>({
-  base: BaseModel,
-  primaryKey: 'id' as const,
-  naming: snakeCase,
-})
+export function configureSupamodel<DB = any>(options: ModelConfigOptions<DB>) {
+  let { client, base, primaryKey, naming } = options
 
-export function config<DB>() {
-  return _config as ModelConfig<DB>
-}
-export default config
-
-export function configureSupamodel<DB = any>(
-  options: ModelConfigOptions<DB>,
-): ModelConfig<DB> {
-  let { client = supabaseEnv(), ...config } = options
-
-  if (!isSupabaseClient(client)) {
-    const { url, key } = client
-
-    client = createClient<DB>(url, key)
+  if (base) baseModel = base
+  if (client) {
+    if (!isSupabaseClient(client)) {
+      client = createClient<DB>(client.url, client.key)
+    }
+    BaseModel.client = client
   }
-  const { base } = Object.assign(_config, config)
+  if (naming) BaseModel.naming = naming
+  if (primaryKey) BaseModel.primaryKey = primaryKey
 
-  base.client = client
-  isConfigured = true
-  return _config
+  BaseModel.naming ??= snakeCase
+  BaseModel.primaryKey ??= 'id' as const
 }
 
-export function baseModel<DB = any>() {
-  return class extends BaseModel {
-    declare static client: SupabaseClient<DB>
-  }
-}
-
-function supabaseEnv() {
+export function supabaseEnv() {
   const { SUPABASE_URL: url, SUPABASE_KEY: key } = process.env
 
   if (!(url && key))
@@ -51,7 +34,7 @@ function supabaseEnv() {
   return { url, key }
 }
 
-function isSupabaseClient(
+export function isSupabaseClient(
   object: any,
 ): object is SupabaseClient<any, any, any> {
   return 'supabaseUrl' in object && 'supabaseKey' in object

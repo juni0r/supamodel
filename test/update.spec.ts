@@ -45,8 +45,8 @@ describe('Model update', () => {
       expect(record.$attributes).toEqual({
         id: 1,
         name: 'name_returned',
-        z_index: 42,
-        is_okay: true,
+        layer: 42,
+        isOkay: true,
         date: new Date('2121-12-12T12:12:12.121Z'),
       })
       expect(record.$isDirty).toBe(false)

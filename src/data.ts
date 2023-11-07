@@ -5,7 +5,6 @@ import {
   configureSupamodel,
   defineModel,
   BaseModel,
-  config,
   datetime,
   transform,
   $,
@@ -29,7 +28,7 @@ export class Model extends BaseModel {
 
 configureSupamodel<Database>({ base: Model })
 
-console.dir(config(), { depth: 1 })
+console.dir(BaseModel, { depth: 5 })
 
 class Record extends defineModel({
   id: $(z.number()),

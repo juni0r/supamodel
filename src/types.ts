@@ -79,9 +79,8 @@ export interface KeyMapper {
   (key: string): string
 }
 
-export interface Transform {
-  take: (v: any) => any
-  emit: (v: any) => any
+export interface TransformFn<In = any, Out = any> {
+  (val: In): Out
 }
 
 export interface Scoped<T = any> {

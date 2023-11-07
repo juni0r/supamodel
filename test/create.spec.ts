@@ -42,8 +42,8 @@ describe('Model create', () => {
       expect(record.$attributes).toEqual({
         id: 1,
         name: 'Stella',
-        z_index: 23,
-        is_okay: false,
+        layer: 23,
+        isOkay: false,
         date: new Date('2020-02-02T02:02:02.020Z'),
       })
     })

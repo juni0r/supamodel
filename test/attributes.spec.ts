@@ -66,11 +66,11 @@ describe('Attributes', () => {
 
       expect(subject.$attributes).toEqual({
         id: 123,
-        given_name: 'Tom',
-        last_name: 'Unfried',
+        givenName: 'Tom',
+        familyName: 'Unfried',
         score: 23,
         date: new Date(iso),
-        date_time: DateTime.fromISO(iso),
+        dateTime: DateTime.fromISO(iso),
       })
 
       const { $set } = subject
@@ -110,48 +110,30 @@ describe('Attributes', () => {
 
       expect(subject.$attributes).toEqual({
         id: 123,
-        given_name: 'Stella',
-        last_name: 'Goldbacke',
+        givenName: 'Stella',
+        familyName: 'Goldbacke',
         score: 42,
         date: jsdate,
-        date_time: DateTime.fromISO(isoDate).toUTC(),
+        dateTime: DateTime.fromISO(isoDate).toUTC(),
       })
     })
   })
 
   describe('static', () => {
     it('maps attribute to column keys', () => {
-      expect(Subject.columnNameOf).toEqual({
-        id: 'id',
-        givenName: 'given_name',
-        familyName: 'last_name',
-        score: 'score',
-        date: 'date',
-        dateTime: 'date_time',
-      })
-    })
-
-    it('maps column to attribute keys', () => {
-      expect(Subject.attributeNameOf).toEqual({
-        id: 'id',
-        given_name: 'givenName',
-        last_name: 'familyName',
-        score: 'score',
-        date: 'date',
-        date_time: 'dateTime',
-      })
-    })
-
-    it('transforms attributes', () => {
-      const { transforms } = Subject
-
-      const isoDate = '2020-02-02T20:20:20.020Z'
-
-      const date = new Date(isoDate)
-      expect(transforms.date.emit?.(date)).toBe(isoDate)
-
-      const dateTime = DateTime.fromISO(isoDate)
-      expect(transforms.date_time.emit?.(dateTime)).toBe(isoDate)
+      expect(
+        Object.entries(Subject.transforms).map(([key, { column }]) => [
+          key,
+          column,
+        ]),
+      ).toEqual([
+        ['id', 'id'],
+        ['givenName', 'given_name'],
+        ['familyName', 'last_name'],
+        ['score', 'score'],
+        ['date', 'date'],
+        ['dateTime', 'date_time'],
+      ])
     })
 
     it('maps attribute keys to schemas', () => {

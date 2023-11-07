@@ -2,7 +2,7 @@ import { SupabaseClient } from '@supabase/supabase-js'
 
 import { Issues } from './issues'
 import { defaults } from './schema'
-import { pluralize, TrackedDirty, failWith, asData, type Dict } from './util'
+import { pluralize, TrackedDirty, failWith, asData, Dict } from './util'
 import {
   SupamodelError,
   RecordNotFound,
@@ -12,32 +12,28 @@ import {
 } from './errors'
 
 import result from 'lodash.result'
-import forEach from 'lodash.foreach'
-import mapValues from 'lodash.mapvalues'
 
 import type {
   Attributes,
   AnyObject,
   KeyMapper,
-  Transform,
   ZodSchemaOf,
   FilterBuilder,
   Scoped,
   ToJSON,
   ID,
 } from './types'
+import { Transform } from './transform'
+import forEach from 'lodash.foreach'
+import mapValues from 'lodash.mapvalues'
 
 export class BaseModel {
   static client: SupabaseClient<any, any, any>
-
   static attributes: Attributes
-  static schema: ZodSchemaOf<Attributes>
   static transforms: Dict<Transform>
+  static schema: ZodSchemaOf<Attributes>
   static naming: KeyMapper
   static primaryKey: string
-
-  static columnNameOf: Dict<string>
-  static attributeNameOf: Dict<string>
 
   static get tableName() {
     return (this.tableName = pluralize(this.naming(this.name)))
@@ -65,40 +61,33 @@ export class BaseModel {
     return false
   }
 
-  $get(attr: string) {
-    return this.$attributes[this.$model.columnNameOf[attr]]
+  $get(key: string) {
+    return this.$attributes[key]
   }
 
-  $set(attr: string, value: unknown) {
-    this.$attributes[this.$model.columnNameOf[attr]] = value
+  $set(key: string, value: unknown) {
+    this.$attributes[key] = value
   }
 
   get $isDirty() {
     return this.$attributes.$isDirty
   }
 
-  $didChange(attr: string) {
-    return this.$attributes.$didChange(this.$model.columnNameOf[attr])
+  $didChange(key: string) {
+    return this.$attributes.$didChange(key)
   }
 
-  $initial(attr: string) {
-    const column = this.$model.columnNameOf[attr]
-
-    return column in this.$attributes.$initial
-      ? this.$attributes.$initial[column]
-      : this.$attributes[column]
+  $initial(key: string) {
+    return key in this.$attributes.$initial
+      ? this.$attributes.$initial[key]
+      : this.$attributes[key]
   }
 
   $take<T extends BaseModel>(this: T, values: AnyObject) {
-    const { $attributes } = this
-    const { transforms } = this.$model
-
-    forEach(values, (value, column) => {
-      $attributes[column] = transforms[column].take(value)
+    forEach(this.$model.transforms, ({ column, take }, key) => {
+      if (column in values) this.$attributes[key] = take(values[column])
     })
-
-    $attributes.$commit()
-
+    this.$attributes.$commit()
     return this
   }
 
@@ -156,20 +145,21 @@ export class BaseModel {
     this.$attributes.$revert()
 
     const { error } = await this.$model.delete(this.$id)
+
     if (error) {
       return failWith(RecordNotDeleted, error)
     }
 
-    return asData(Object.defineProperty(this, '$isDeleted', { value: true }))
+    Object.defineProperty(this, '$isDeleted', { value: true })
+
+    return asData(this)
   }
 
   toJSON(): ToJSON {
-    const { attributeNameOf } = this.$model
-
     return Object.entries(this.$attributes).reduce(
-      (json, [column, value]) => ({
+      (json, [key, value]) => ({
         ...json,
-        [attributeNameOf[column]]: result(value, 'toJSON', value),
+        [key]: result(value, 'toJSON', value),
       }),
       {},
     )

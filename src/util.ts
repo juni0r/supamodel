@@ -1,7 +1,7 @@
 import { underscore, camelize, dasherize, pluralize } from 'inflection'
 import { trackDirty, type DirtyDecorator } from './trackDirty'
-import type { AnyObject, KeyMapper } from './types'
 import { SupamodelError } from './errors'
+import type { AnyObject, KeyMapper } from './types'
 
 export { default as isEqual } from 'fast-deep-equal'
 
