@@ -77,7 +77,7 @@ describe('Model update', () => {
     })
 
     it('fails with a cause', async () => {
-      const { error } = await record.save()
+      const { error } = await record.save({ onlyChanges: false })
 
       expect(error!.issues.none).toBe(true)
       expect(error!.cause).toBe(cause)

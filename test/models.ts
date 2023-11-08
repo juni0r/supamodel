@@ -7,7 +7,7 @@ configureSupamodel()
 
 export class Record extends defineModel({
   id: $(number().int().optional()),
-  name: $(string().min(1)),
+  name: $(string().min(1).nullable()),
   layer: $(number().int().min(1), { column: 'z_index' }),
   isOkay: $(boolean().default(false)),
   date: $(

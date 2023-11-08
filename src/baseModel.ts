@@ -1,8 +1,14 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 
 import { Issues } from './issues'
-import { defaults } from './schema'
-import { pluralize, TrackedDirty, failWith, asData, Dict } from './util'
+import {
+  asData,
+  failWith,
+  pluralize,
+  TrackedDirty,
+  type Dict,
+  type DirtyDict,
+} from './util'
 import {
   SupamodelError,
   RecordNotFound,
@@ -15,16 +21,19 @@ import result from 'lodash.result'
 import forEach from 'lodash.foreach'
 import mapValues from 'lodash.mapvalues'
 
+import type { TypeOf } from 'zod'
+
 import type {
   Attributes,
-  AnyObject,
   KeyMapper,
+  Transform,
   ZodSchemaOf,
+  DefaultsOf,
   FilterBuilder,
   Scoped,
+  AnyObject,
   ToJSON,
   ID,
-  Transform,
 } from './types'
 
 export class BaseModel {
@@ -32,8 +41,10 @@ export class BaseModel {
   static attributes: Attributes
   static transforms: Dict<Transform>
   static schema: ZodSchemaOf<Attributes>
+  static defaults: DefaultsOf<Attributes>
   static naming: KeyMapper
   static primaryKey: string
+  static scope: Dict
 
   static get tableName() {
     return (this.tableName = pluralize(this.naming(this.name)))
@@ -43,10 +54,14 @@ export class BaseModel {
     Object.defineProperty(this, 'tableName', { value, enumerable: true })
   }
 
-  $attributes = TrackedDirty()
+  $attributes: TypeOf<ZodSchemaOf<Attributes>> & DirtyDict
 
+  // This constructor signature is required in order to use BaseModel as a
+  // mixin class (i.e. defining an anonymous class that extends BaseModel).
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  constructor(..._args: any[]) {}
+  constructor(..._args: any[]) {
+    this.$attributes = TrackedDirty()
+  }
 
   get $model() {
     return this.constructor as typeof BaseModel
@@ -72,8 +87,16 @@ export class BaseModel {
     this.$attributes[key] = value
   }
 
+  $assign<T extends BaseModel>(this: T, values: Dict) {
+    return Object.assign(this, values)
+  }
+
   get $isDirty() {
     return this.$attributes.$isDirty
+  }
+
+  get $changes() {
+    return this.$attributes.$changes
   }
 
   $didChange(key: string) {
@@ -86,11 +109,13 @@ export class BaseModel {
       : this.$attributes[key]
   }
 
-  $take<T extends BaseModel>(this: T, values: AnyObject) {
-    forEach(this.$model.transforms, ({ column, take }, key) => {
-      if (column in values) this.$attributes[key] = take(values[column])
-    })
+  $commit<T extends BaseModel>(this: T) {
     this.$attributes.$commit()
+    return this
+  }
+
+  $revert<T extends BaseModel>(this: T) {
+    this.$attributes.$revert()
     return this
   }
 
@@ -101,6 +126,27 @@ export class BaseModel {
       onlyChanges ? this.$attributes.$changes : this.$attributes,
       (value, column) => transforms[column].emit(value),
     )
+  }
+
+  $take<T extends BaseModel>(this: T, values: AnyObject) {
+    forEach(this.$model.transforms, ({ column, take }, key) => {
+      if (column in values) this.$attributes[key] = take(values[column])
+    })
+    this.$attributes.$commit()
+    return this
+  }
+
+  $takeDefaults<T extends BaseModel>(this: T, values?: AnyObject) {
+    if (values) this.$take(values)
+
+    const { defaults } = this.$model
+
+    for (const key in defaults) {
+      if (this.$get(key) === undefined) {
+        this.$set(key, defaults[key]())
+      }
+    }
+    return this
   }
 
   $parse() {
@@ -116,16 +162,24 @@ export class BaseModel {
     return Issues.None
   }
 
-  async save<T extends BaseModel>(this: T) {
-    const issues = this.validate()
-    if (issues.any) {
-      return failWith(RecordInvalid, issues)
+  async save<T extends BaseModel>(
+    this: T,
+    {
+      validate = true,
+      onlyChanges = true,
+    }: { validate?: boolean; onlyChanges?: boolean } = {},
+  ) {
+    if (onlyChanges && !this.$isDirty) return asData(this)
+
+    if (validate) {
+      const issues = this.validate()
+      if (issues.any) return failWith(RecordInvalid, issues)
     }
 
     const { client, tableName, primaryKey } = this.$model
 
     const table = client.from(tableName)
-    const record = this.$emit({ onlyChanges: true })
+    const record = this.$emit({ onlyChanges })
 
     const { error, data } = await (this.$isPersisted
       ? table.update(record).eq(primaryKey, this.$id)
@@ -142,6 +196,14 @@ export class BaseModel {
     this.$take(data)
 
     return asData(this)
+  }
+
+  async updateAttributes<T extends BaseModel>(
+    this: T,
+    values: Record<keyof T, any>,
+    { validate = false }: { validate?: boolean } = {},
+  ) {
+    return this.$assign(values).save({ validate })
   }
 
   async delete<T extends BaseModel>(this: T) {
@@ -168,26 +230,29 @@ export class BaseModel {
     )
   }
 
-  static defaults() {
-    return defaults(this.schema)
-  }
-
   static take<T extends typeof BaseModel>(this: T, values: AnyObject) {
     return new this().$take(values) as InstanceType<T>
   }
 
+  static takeDefaults<T extends typeof BaseModel>(this: T, values?: AnyObject) {
+    return new this().$takeDefaults(values) as InstanceType<T>
+  }
+
   static scoped<T>(filter: FilterBuilder<T>): FilterBuilder<T> {
-    return filter
+    return Object.entries(this.scope).reduce(
+      (where, [key, value]) => where.eq(key, value),
+      filter,
+    )
+  }
+
+  static insert(record: AnyObject) {
+    return this.client.from(this.tableName).insert(record)
   }
 
   static select<T extends typeof BaseModel>(this: T, columns = '*' as const) {
     return this.scoped(
       this.client.from(this.tableName).select<typeof columns, T>(columns),
     )
-  }
-
-  static insert(record: AnyObject) {
-    return this.client.from(this.tableName).insert(record)
   }
 
   static update(id: ID, record: AnyObject) {
@@ -198,14 +263,14 @@ export class BaseModel {
   }
 
   static delete(id: ID) {
-    return this.scoped(
-      this.client.from(this.tableName).delete().eq(String(this.primaryKey), id),
-    )
+    return this.client
+      .from(this.tableName)
+      .delete()
+      .eq(String(this.primaryKey), id)
   }
 
   static async findAll<T extends typeof BaseModel>(this: T, scoped?: Scoped) {
     let query = this.select()
-
     if (scoped) query = scoped(query)
 
     const { error, data } = await query
@@ -216,18 +281,26 @@ export class BaseModel {
     )
   }
 
-  static async find<T extends typeof BaseModel>(this: T, id: ID) {
-    const { data, error } = await this.client
-      .from(this.tableName)
-      .select()
-      .eq(String(this.primaryKey), id)
-      .maybeSingle()
+  static async findOne<T extends typeof BaseModel>(this: T, scoped?: Scoped) {
+    let query = this.select()
+    if (scoped) query = scoped(query)
 
-    if (!data) {
-      return failWith(RecordNotFound, this.tableName, id, error)
+    const { data, error } = await query.maybeSingle()
+
+    if (error) {
+      return failWith(SupamodelError, error)
     }
 
-    return asData(new this().$take(data) as InstanceType<T>)
+    return asData(data && (new this().$take(data) as InstanceType<T>))
+  }
+
+  static async find<T extends typeof BaseModel>(this: T, id: ID) {
+    const { data, error } = await this.findOne((where) =>
+      where.eq(String(this.primaryKey), id),
+    )
+    return data
+      ? asData(data)
+      : failWith(RecordNotFound, this.tableName, id, error?.cause)
   }
 
   static async withClient<DB = any>(

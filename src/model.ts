@@ -4,8 +4,8 @@ import merge from 'lodash.merge'
 
 import { baseModel } from './config'
 import { BaseModel } from './baseModel'
-import { zodSchemaOf } from './schema'
-import { Dict, identity } from './util'
+import { defaultsOf, zodSchemaOf } from './schema'
+import { Dict, TrackedDirty, identity } from './util'
 
 import type {
   ModelOptions,
@@ -25,6 +25,11 @@ export function defineModel<Attrs extends Attributes>(
     static attributes = attributes
     static transforms = Dict<Transform>()
     static schema = zodSchemaOf(attributes)
+    static defaults = defaultsOf(attributes)
+    static scope = Dict()
+
+    // $attributes = TrackedDirty<Schema>()
+    declare $attributes: ReturnType<typeof TrackedDirty<Schema>>
   }
 
   const { prototype, naming } = merge(model, options)

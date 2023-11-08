@@ -55,7 +55,7 @@ describe('Model create', () => {
     })
 
     it('fails with issues', async () => {
-      const { error } = await record.save()
+      const { error } = await record.save({ onlyChanges: false })
 
       expect(error!.issues.any).toBe(true)
       expect(error!.issues.map((i) => i.path[0])).toEqual(['name', 'layer'])

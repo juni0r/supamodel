@@ -23,7 +23,11 @@ export function trackDirty<T extends AnyObject>(object: T) {
   }
 
   function $revert() {
-    Object.assign(object, $initial)
+    Object.entries($initial).forEach(([key, value]) => {
+      if (value !== undefined) {
+        object[key as keyof T] = value
+      } else delete object[key]
+    })
     return $commit()
   }
 

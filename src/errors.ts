@@ -3,24 +3,26 @@ import type { ZodIssue } from 'zod'
 import type { ID } from './types'
 import { Issues } from './issues'
 
+type Cause = Error | PostgrestError
+
 export class SupamodelError extends Error {
-  cause?: Error
+  cause?: Cause
 
   get name() {
     return this.constructor.name
   }
 
-  constructor(cause: string | Error | PostgrestError) {
+  constructor(cause: Cause | string) {
     if (typeof cause === 'string') super(cause)
     else {
       super(cause.message)
-      this.cause = cause as Error
+      this.cause = cause
     }
   }
 }
 
 export class RecordNotFound extends SupamodelError {
-  constructor(tableName: string, id: ID, cause?: PostgrestError | null) {
+  constructor(tableName: string, id: ID, cause?: Cause | null) {
     super(cause ?? `No ${tableName} with primary key ${JSON.stringify(id)}`)
   }
 }

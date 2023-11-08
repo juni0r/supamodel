@@ -1,4 +1,12 @@
-import type { ZodObject, TypeOf, ZodSchema } from 'zod'
+import type {
+  ZodObject,
+  TypeOf,
+  ZodSchema,
+  deoptional,
+  ZodNullable,
+  ZodDefault,
+  ZodTypeAny,
+} from 'zod'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type {
@@ -11,6 +19,7 @@ import type {
   PostgrestQueryBuilder,
 } from '@supabase/postgrest-js'
 
+import type { Simplify } from 'type-fest'
 import type { BaseModel } from './baseModel'
 import type { SupamodelError } from './errors'
 
@@ -65,15 +74,33 @@ export type AttributeOptions<Z extends ZodSchema> = Partial<
   Omit<Attribute<Z>, 'type'>
 >
 
-export type SchemaOf<T> = {
-  [k in keyof T]: T[k] extends Attribute<any> ? TypeOf<T[k]['type']> : never
-}
-
-export type ShapeOf<T> = {
-  [k in keyof T]: T[k] extends Attribute<any> ? T[k]['type'] : never
-}
-
 export type ZodSchemaOf<Attrs extends Attributes> = ZodObject<ShapeOf<Attrs>>
+
+export type SchemaOf<T> = Simplify<{
+  [k in keyof T]: T[k] extends Attribute<any> ? TypeOf<T[k]['type']> : never
+}>
+
+export type ShapeOf<T> = Simplify<{
+  [k in keyof T]: T[k] extends Attribute<any> ? T[k]['type'] : never
+}>
+
+export type DefaultType<
+  T extends ZodTypeAny,
+  D = deoptional<T>,
+> = D extends ZodNullable<infer I>
+  ? () => TypeOf<I> | null
+  : D extends ZodDefault<infer I>
+  ? () => TypeOf<I>
+  : never
+
+export type DefaultsOf<
+  A extends Attributes,
+  T extends ShapeOf<A> = ShapeOf<A>,
+> = Simplify<{
+  [key in keyof T as T[key] extends ZodNullable<any> | ZodDefault<any>
+    ? key
+    : never]: DefaultType<T[key]>
+}>
 
 export interface KeyMapper {
   (key: string): string

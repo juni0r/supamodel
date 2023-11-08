@@ -64,6 +64,7 @@
     "lodash.pick": "^4.4.0",
     "lodash.result": "^4.5.2",
     "lodash.snakecase": "^4.1.1",
+    "lodash.transform": "^4.6.0",
     "luxon": "^3.4.3",
     "zod": "^3.22.4"
   },
@@ -79,6 +80,7 @@
     "@types/lodash.pick": "^4.4.8",
     "@types/lodash.result": "^4.5.8",
     "@types/lodash.snakecase": "^4.1.8",
+    "@types/lodash.transform": "^4.6.9",
     "@types/luxon": "^3.3.3",
     "@types/node": "^20.8.7",
     "@typescript-eslint/eslint-plugin": "^6.8.0",
