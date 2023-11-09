@@ -120,20 +120,38 @@ describe('Attributes', () => {
   })
 
   describe('static', () => {
-    it('maps attribute to column keys', () => {
+    it('transforms attribute', () => {
+      const { transforms } = Subject
       expect(
-        Object.entries(Subject.transforms).map(([key, { column }]) => [
-          key,
-          column,
-        ]),
-      ).toEqual([
-        ['id', 'id'],
-        ['givenName', 'given_name'],
-        ['familyName', 'last_name'],
-        ['score', 'score'],
-        ['date', 'date'],
-        ['dateTime', 'date_time'],
-      ])
+        Object.fromEntries(
+          Object.entries(transforms).map(([key, { column }]) => [key, column]),
+        ),
+      ).toEqual({
+        id: 'id',
+        givenName: 'given_name',
+        familyName: 'last_name',
+        score: 'score',
+        date: 'date',
+        dateTime: 'date_time',
+      })
+
+      Expect<(value: any) => number>()(transforms.id.take)
+      Expect<(value: number) => any>()(transforms.id.emit)
+
+      Expect<(value: any) => string>()(transforms.givenName.take)
+      Expect<(value: string) => any>()(transforms.givenName.emit)
+
+      Expect<(value: any) => string>()(transforms.familyName.take)
+      Expect<(value: string) => any>()(transforms.familyName.emit)
+
+      Expect<(value: any) => number>()(transforms.score.take)
+      Expect<(value: number) => any>()(transforms.score.emit)
+
+      Expect<(value: any) => Date>()(transforms.date.take)
+      Expect<(value: Date) => any>()(transforms.date.emit)
+
+      Expect<(value: any) => DateTime>()(transforms.dateTime.take)
+      Expect<(value: DateTime) => any>()(transforms.dateTime.emit)
     })
 
     it('maps attribute keys to schemas', () => {
@@ -143,12 +161,22 @@ describe('Attributes', () => {
       expect(shape.givenName).toBeInstanceOf(ZodString)
       expect(shape.familyName).toBeInstanceOf(ZodString)
       expect(shape.date).toBeInstanceOf(ZodDate)
-
-      expect(shape.score).toBeInstanceOf(ZodDefault)
-      expect(shape.score._def.innerType).toBeInstanceOf(ZodNumber)
-      expect(shape.score._def.defaultValue()).toBe(0)
-
       expect(shape.dateTime).toBeInstanceOf(ZodEffects)
+      expect(shape.score).toBeInstanceOf(ZodDefault)
+      expect(shape.score.removeDefault()).toBeInstanceOf(ZodNumber)
+      expect(shape.score.parse(undefined)).toBe(0)
+    })
+
+    it('takes defaults', () => {
+      subject = Subject.takeDefaults()
+
+      expect(subject.$attributes).toEqual({ score: 0 })
+      expect(subject.$changes).toEqual({ score: 0 })
+      expect(subject.$isDirty).toBe(true)
+
+      expect(Subject.defaults.score()).toBe(0)
+
+      Expect<() => number>()(Subject.defaults.score)
     })
   })
 })
