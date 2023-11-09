@@ -5,7 +5,7 @@ export { DateTime } from 'luxon'
 
 export { Issues } from './issues'
 export { ModelClass as BaseModel } from './model'
-export { transform, datetime, attr, attr as $ } from './schema'
+export { transforms, datetime, attr, attr as $ } from './schema'
 export { camelCase, snakeCase, kebabCase, pluralize } from './util'
 export {
   SupamodelError,

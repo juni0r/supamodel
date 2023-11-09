@@ -1,4 +1,4 @@
-import { defineModel, datetime, transform, zod, $ } from '.'
+import { defineModel, datetime, transforms, zod, $ } from '.'
 
 const { object, string } = zod
 
@@ -7,15 +7,15 @@ export class User extends defineModel({
   email: $(string().email()),
   aud: $(string()),
   role: $(string()),
-  emailConfirmedAt: $(datetime(), transform.datetime),
+  emailConfirmedAt: $(datetime(), transforms.datetime),
   phone: $(string()),
-  confirmedAt: $(datetime(), transform.datetime),
-  recoverySentAt: $(datetime(), transform.datetime),
-  lastSignInAt: $(datetime(), transform.datetime),
+  confirmedAt: $(datetime(), transforms.datetime),
+  recoverySentAt: $(datetime(), transforms.datetime),
+  lastSignInAt: $(datetime(), transforms.datetime),
   appMetadata: $(object({}).passthrough()),
   userMetadata: $(object({}).passthrough()),
   identities: $(object({}).passthrough().array()),
-  createdAt: $(datetime(), transform.datetime),
-  updatedAt: $(datetime(), transform.datetime),
+  createdAt: $(datetime(), transforms.datetime),
+  updatedAt: $(datetime(), transforms.datetime),
 }) {}
 export default User

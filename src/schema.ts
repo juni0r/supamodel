@@ -31,17 +31,32 @@ export const datetime = () =>
     { message: 'Invalid DateTime', params: { code: 'invalid-datetime' } },
   )
 
-export const transform = {
+function dateFromISO(iso: mayBe<string>) {
+  return new Date(iso ?? 'invalid')
+}
+
+function ISOFromDate(date: mayBe<Date>) {
+  return date?.toISOString() ?? ''
+}
+
+function dateTimeFromISO(iso: mayBe<string>) {
+  return iso
+    ? DateTime.fromISO(iso, { zone: 'utc' })
+    : DateTime.invalid('unable to parse from empty ISO string')
+}
+
+function ISOFromDateTime(date: mayBe<DateTime>) {
+  return date?.toUTC().toISO() ?? ''
+}
+
+export const transforms = {
   date: {
-    take: (iso: mayBe<string>) => new Date(iso ?? 'invalid'),
-    emit: (date: mayBe<Date>) => date?.toISOString() ?? '',
+    take: dateFromISO,
+    emit: ISOFromDate,
   },
   datetime: {
-    take: (iso: mayBe<string>) =>
-      iso
-        ? DateTime.fromISO(iso, { zone: 'utc' })
-        : DateTime.invalid('unable to parse from empty ISO string'),
-    emit: (date: mayBe<DateTime>) => date?.toUTC().toISO() ?? '',
+    take: dateTimeFromISO,
+    emit: ISOFromDateTime,
   },
 }
 

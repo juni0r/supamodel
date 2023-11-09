@@ -1,6 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 
 import { Issues } from './issues'
+import { defaultsOf, zodSchemaOf } from './schema'
 import {
   asData,
   failWith,
@@ -24,23 +25,23 @@ import forEach from 'lodash.foreach'
 import mapValues from 'lodash.mapvalues'
 
 import type {
-  Attributes,
-  KeyMapper,
-  Transform,
-  DefaultsOf,
-  FilterBuilder,
-  Scoped,
-  AnyObject,
-  ToJSON,
-  ID,
-  AttributeOptions,
-  ZodObjectOf,
   ModelOptions,
-  SchemaOf,
-  Extend,
+  AttributeOptions,
+  Attributes,
+  Transform,
   TransformsOf,
+  ZodObjectOf,
+  DefaultsOf,
+  SchemaOf,
+  ScopeOf,
+  FilterBuilder,
+  AnyObject,
+  KeyMapper,
+  Scoped,
+  ToJSON,
+  Extend,
+  ID,
 } from './types'
-import { defaultsOf, zodSchemaOf } from './schema'
 
 export class ModelClass {
   static client: SupabaseClient<any, any, any>
@@ -135,7 +136,9 @@ export class ModelClass {
 
   $take<T extends ModelClass>(this: T, values: AnyObject) {
     forEach(this.$model.transforms, ({ column, take }, key) => {
-      if (column in values) this.$attributes[key] = take(values[column])
+      if (column in values) {
+        this.$attributes[key] = take(values[column])
+      }
     })
     this.$attributes.$commit()
     return this
@@ -357,24 +360,28 @@ export class ModelClass {
     })
   }
 
+  static configure(options: Partial<ModelOptions>) {
+    return merge(this, options)
+  }
+
   static extend<T extends typeof ModelClass, Attrs extends Attributes>(
     this: T,
     attributes: Attrs,
     options: Partial<ModelOptions> = {},
   ) {
-    type Schema = SchemaOf<Attrs>
-
     class model extends this {}
 
-    merge(model, options).defineAttributes(attributes)
+    model.configure(options)
+    model.defineAttributes(attributes)
 
-    return model as Extend<
+    type Schema = SchemaOf<Attrs>
+    type Model = Extend<
       typeof model,
       {
         new (...args: any[]): Extend<
           model,
           {
-            $model: typeof model
+            $model: Model
             $attributes: DirtyDict<Schema>
             $get<K extends keyof Schema>(key: K): Schema[K]
             $set<K extends keyof Schema>(key: K, value: Schema[K]): void
@@ -386,8 +393,10 @@ export class ModelClass {
         schema: ZodObjectOf<Attrs>
         defaults: DefaultsOf<Attrs>
         transforms: TransformsOf<Attrs>
+        scope: ScopeOf<Attrs>
       }
     >
+    return model as Model
   }
 }
 export default ModelClass

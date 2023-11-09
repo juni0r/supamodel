@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { defineModel as model, $, transform, datetime, DateTime } from '../src'
+import { defineModel as model, $, transforms, datetime, DateTime } from '../src'
 import { string, date, number, boolean } from 'zod'
 
 import configureSupamodel from './support/configureSupamodel'
@@ -11,8 +11,8 @@ describe('Model', () => {
     name: $(string()),
     position: $(number()),
     isOkay: $(boolean()),
-    date: $(date(), transform.date),
-    dateTime: $(datetime(), transform.datetime),
+    date: $(date(), transforms.date),
+    dateTime: $(datetime(), transforms.datetime),
   }) {}
 
   let subject: Subject

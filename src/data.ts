@@ -6,7 +6,7 @@ import {
   defineModel,
   BaseModel,
   datetime,
-  transform,
+  transforms,
   $,
   z,
 } from '.'
@@ -39,7 +39,7 @@ class Record extends defineModel({
   score: $(z.number().int()),
   data: $(z.object({}).passthrough()),
   isOkay: $(z.boolean()),
-  createdAt: $(datetime(), transform.datetime),
+  createdAt: $(datetime(), transforms.datetime),
 }) {
   get name() {
     return `${this.firstName} ${this.lastName}`

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { defineModel as model, $, datetime, transform } from '../src'
+import { defineModel as model, $, datetime, transforms } from '../src'
 import { string, date } from 'zod'
 
 import configureSupamodel from './support/configureSupamodel'
@@ -10,8 +10,8 @@ describe('Validation', () => {
   class Subject extends model({
     givenName: $(string().trim().min(1)),
     familyName: $(string().nullable()),
-    date: $(date(), transform.date),
-    dateTime: $(datetime(), transform.datetime),
+    date: $(date(), transforms.date),
+    dateTime: $(datetime(), transforms.datetime),
   }) {}
 
   let subject: Subject

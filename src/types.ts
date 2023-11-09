@@ -74,21 +74,30 @@ export type AttributeOptions<Z extends ZodSchema = any> = Partial<
   Omit<Attribute<Z>, 'type'>
 >
 
-export type ZodObjectOf<Attrs extends Attributes> = ZodObject<ShapeOf<Attrs>>
-
-export type SchemaOf<T> = Simplify<{
-  [k in keyof T]: T[k] extends Attribute<any> ? TypeOf<T[k]['type']> : never
+export type TransformsOf<A extends Attributes> = Simplify<{
+  [k in keyof A]: A[k] extends Attribute ? Simplify<Omit<A[k], 'type'>> : never
 }>
 
-export type ShapeOf<T> = Simplify<{
-  [k in keyof T]: T[k] extends Attribute<any> ? T[k]['type'] : never
+export type ZodObjectOf<A extends Attributes> = ZodObject<ShapeOf<A>>
+
+export type SchemaOf<A extends Attributes> = Simplify<{
+  [k in keyof A]: A[k] extends Attribute ? TypeOf<A[k]['type']> : never
 }>
 
-export type TransformsOf<T> = {
-  [k in keyof T]: T[k] extends Attribute<any>
-    ? Simplify<Omit<T[k], 'type'>>
-    : never
-}
+export type ShapeOf<A extends Attributes> = Simplify<{
+  [k in keyof A]: A[k] extends Attribute ? A[k]['type'] : never
+}>
+
+export type ScopeOf<A extends Attributes> = Simplify<Partial<SchemaOf<A>>>
+
+export type DefaultsOf<
+  A extends Attributes,
+  S extends ShapeOf<A> = ShapeOf<A>,
+> = Simplify<{
+  [k in keyof S as S[k] extends ZodNullable<any> | ZodDefault<any>
+    ? k
+    : never]: DefaultType<S[k]>
+}>
 
 export type DefaultType<
   T extends ZodTypeAny,
@@ -98,15 +107,6 @@ export type DefaultType<
   : D extends ZodDefault<infer I>
   ? () => TypeOf<I>
   : never
-
-export type DefaultsOf<
-  A extends Attributes,
-  T extends ShapeOf<A> = ShapeOf<A>,
-> = Simplify<{
-  [key in keyof T as T[key] extends ZodNullable<any> | ZodDefault<any>
-    ? key
-    : never]: DefaultType<T[key]>
-}>
 
 export interface KeyMapper {
   (key: string): string
