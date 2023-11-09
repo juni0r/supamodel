@@ -1,16 +1,8 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 
-import { Issues } from './issues'
+import { asData, failWith, pluralize, identity, DirtyDict, Dict } from './util'
 import { defaultsOf, zodSchemaOf } from './schema'
-import {
-  asData,
-  failWith,
-  pluralize,
-  identity,
-  DirtyDict,
-  New,
-  type Dict,
-} from './util'
+import { Issues } from './issues'
 import {
   SupamodelError,
   RecordNotFound,
@@ -26,7 +18,6 @@ import mapValues from 'lodash.mapvalues'
 
 import type {
   ModelOptions,
-  AttributeOptions,
   Attributes,
   Transform,
   TransformsOf,
@@ -35,7 +26,6 @@ import type {
   SchemaOf,
   ScopeOf,
   FilterBuilder,
-  AnyObject,
   KeyMapper,
   Scoped,
   ToJSON,
@@ -45,8 +35,8 @@ import type {
 
 export class Model {
   static client: SupabaseClient<any, any, any>
-  static transforms: Dict<Transform>
   static schema: ZodObjectOf<Attributes>
+  static transforms: Dict<Transform>
   static defaults: DefaultsOf<Attributes>
   static naming: KeyMapper
   static primaryKey: string
@@ -60,14 +50,12 @@ export class Model {
     Object.defineProperty(this, 'tableName', { value, enumerable: true })
   }
 
-  $attributes: DirtyDict
-
   // This constructor signature is required in order to use BaseModel as a
   // mixin class (i.e. defining an anonymous class that extends BaseModel).
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  constructor(..._args: any[]) {
-    this.$attributes = DirtyDict()
-  }
+  constructor(..._args: any[]) {}
+
+  $attributes = DirtyDict()
 
   get $model() {
     return this.constructor as typeof Model
@@ -134,7 +122,7 @@ export class Model {
     )
   }
 
-  $take<T extends Model>(this: T, values: AnyObject) {
+  $take<T extends Model>(this: T, values: Dict) {
     forEach(this.$model.transforms, ({ column, take }, key) => {
       if (column in values) {
         this.$attributes[key] = take(values[column])
@@ -144,7 +132,7 @@ export class Model {
     return this
   }
 
-  $takeDefaults<T extends Model>(this: T, values?: AnyObject) {
+  $takeDefaults<T extends Model>(this: T, values?: Dict) {
     if (values) this.$take(values)
 
     const { defaults } = this.$model
@@ -238,11 +226,11 @@ export class Model {
     )
   }
 
-  static take<T extends typeof Model>(this: T, values: AnyObject) {
+  static take<T extends typeof Model>(this: T, values: Dict) {
     return new this().$take(values) as InstanceType<T>
   }
 
-  static takeDefaults<T extends typeof Model>(this: T, values?: AnyObject) {
+  static takeDefaults<T extends typeof Model>(this: T, values?: Dict) {
     return new this().$takeDefaults(values) as InstanceType<T>
   }
 
@@ -253,7 +241,7 @@ export class Model {
     )
   }
 
-  static insert(record: AnyObject) {
+  static insert(record: Dict) {
     return this.client.from(this.tableName).insert(record)
   }
 
@@ -263,7 +251,7 @@ export class Model {
     )
   }
 
-  static update(id: ID, record: AnyObject) {
+  static update(id: ID, record: Dict) {
     return this.client
       .from(this.tableName)
       .update(record)
@@ -329,31 +317,24 @@ export class Model {
   static defineAttributes<T extends Attributes>(attributes: T) {
     this.schema = zodSchemaOf(attributes)
     this.defaults = defaultsOf(attributes)
-    this.transforms = New<Record<keyof T, Transform>>()
-    this.scope = New<Record<keyof T, any>>()
+    this.transforms = Dict()
+    this.scope = Dict()
 
-    forEach(attributes, (attribute, key) =>
-      this.defineAttribute(key, attribute),
-    )
-  }
+    forEach(attributes, ({ column, take, emit }, key) => {
+      this.transforms[key] = {
+        column: column ?? this.naming(key),
+        take: take ?? identity,
+        emit: emit ?? identity,
+      }
 
-  static defineAttribute(
-    key: string,
-    {
-      column = this.naming(key),
-      take = identity,
-      emit = identity,
-    }: AttributeOptions,
-  ) {
-    this.transforms[key] = { column, take, emit }
-
-    Object.defineProperty(this.prototype, key, {
-      get() {
-        return this.$get(key)
-      },
-      set(value: unknown) {
-        this.$set(key, value)
-      },
+      Object.defineProperty(this.prototype, key, {
+        get() {
+          return this.$get(key)
+        },
+        set(value: unknown) {
+          this.$set(key, value)
+        },
+      })
     })
   }
 
