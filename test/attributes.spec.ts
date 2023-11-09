@@ -1,9 +1,15 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { Expect } from './support/util'
-import { z, DateTime, ID } from '../src'
+import { DateTime, ID } from '../src'
 import { Subject } from './models'
-
-const { ZodString, ZodNumber, ZodDate, ZodEffects, ZodDefault } = z
+import {
+  ZodDate,
+  ZodEffects,
+  ZodType,
+  ZodString,
+  ZodNumber,
+  ZodDefault,
+} from 'zod'
 
 describe('Attributes', () => {
   let subject: Subject
@@ -165,6 +171,13 @@ describe('Attributes', () => {
       expect(shape.score).toBeInstanceOf(ZodDefault)
       expect(shape.score.removeDefault()).toBeInstanceOf(ZodNumber)
       expect(shape.score.parse(undefined)).toBe(0)
+
+      Expect<ZodNumber>()(shape.id)
+      Expect<ZodString>()(shape.givenName)
+      Expect<ZodString>()(shape.familyName)
+      Expect<ZodDate>()(shape.date)
+      Expect<ZodType<DateTime>>()(shape.dateTime)
+      Expect<ZodDefault<ZodNumber>>()(shape.score)
     })
 
     it('takes defaults', () => {

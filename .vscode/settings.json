@@ -8,5 +8,6 @@
     },
     "comments": "#647279",
     "textMateRules": []
-  }
+  },
+  "testing.automaticallyOpenPeekView": "never"
 }
