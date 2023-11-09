@@ -43,7 +43,7 @@ import type {
   ID,
 } from './types'
 
-export class ModelClass {
+export class Model {
   static client: SupabaseClient<any, any, any>
   static transforms: Dict<Transform>
   static schema: ZodObjectOf<Attributes>
@@ -70,7 +70,7 @@ export class ModelClass {
   }
 
   get $model() {
-    return this.constructor as typeof ModelClass
+    return this.constructor as typeof Model
   }
 
   get $id() {
@@ -93,7 +93,7 @@ export class ModelClass {
     this.$attributes[key] = value
   }
 
-  $assign<T extends ModelClass>(this: T, values: Dict) {
+  $assign<T extends Model>(this: T, values: Dict) {
     return Object.assign(this, values)
   }
 
@@ -115,12 +115,12 @@ export class ModelClass {
       : this.$attributes[key]
   }
 
-  $commit<T extends ModelClass>(this: T) {
+  $commit<T extends Model>(this: T) {
     this.$attributes.$commit()
     return this
   }
 
-  $revert<T extends ModelClass>(this: T) {
+  $revert<T extends Model>(this: T) {
     this.$attributes.$revert()
     return this
   }
@@ -134,7 +134,7 @@ export class ModelClass {
     )
   }
 
-  $take<T extends ModelClass>(this: T, values: AnyObject) {
+  $take<T extends Model>(this: T, values: AnyObject) {
     forEach(this.$model.transforms, ({ column, take }, key) => {
       if (column in values) {
         this.$attributes[key] = take(values[column])
@@ -144,7 +144,7 @@ export class ModelClass {
     return this
   }
 
-  $takeDefaults<T extends ModelClass>(this: T, values?: AnyObject) {
+  $takeDefaults<T extends Model>(this: T, values?: AnyObject) {
     if (values) this.$take(values)
 
     const { defaults } = this.$model
@@ -170,7 +170,7 @@ export class ModelClass {
     return Issues.None
   }
 
-  async save<T extends ModelClass>(
+  async save<T extends Model>(
     this: T,
     {
       validate = true,
@@ -206,7 +206,7 @@ export class ModelClass {
     return asData(this)
   }
 
-  async updateAttributes<T extends ModelClass>(
+  async updateAttributes<T extends Model>(
     this: T,
     values: Record<keyof T, any>,
     { validate = false }: { validate?: boolean } = {},
@@ -214,7 +214,7 @@ export class ModelClass {
     return this.$assign(values).save({ validate })
   }
 
-  async delete<T extends ModelClass>(this: T) {
+  async delete<T extends Model>(this: T) {
     this.$attributes.$revert()
 
     const { error } = await this.$model.delete(this.$id)
@@ -238,14 +238,11 @@ export class ModelClass {
     )
   }
 
-  static take<T extends typeof ModelClass>(this: T, values: AnyObject) {
+  static take<T extends typeof Model>(this: T, values: AnyObject) {
     return new this().$take(values) as InstanceType<T>
   }
 
-  static takeDefaults<T extends typeof ModelClass>(
-    this: T,
-    values?: AnyObject,
-  ) {
+  static takeDefaults<T extends typeof Model>(this: T, values?: AnyObject) {
     return new this().$takeDefaults(values) as InstanceType<T>
   }
 
@@ -260,7 +257,7 @@ export class ModelClass {
     return this.client.from(this.tableName).insert(record)
   }
 
-  static select<T extends typeof ModelClass>(this: T, columns = '*' as const) {
+  static select<T extends typeof Model>(this: T, columns = '*' as const) {
     return this.scoped(
       this.client.from(this.tableName).select<typeof columns, T>(columns),
     )
@@ -280,7 +277,7 @@ export class ModelClass {
       .eq(String(this.primaryKey), id)
   }
 
-  static async findAll<T extends typeof ModelClass>(this: T, scoped?: Scoped) {
+  static async findAll<T extends typeof Model>(this: T, scoped?: Scoped) {
     let query = this.select()
     if (scoped) query = scoped(query)
 
@@ -292,7 +289,7 @@ export class ModelClass {
     )
   }
 
-  static async findOne<T extends typeof ModelClass>(this: T, scoped?: Scoped) {
+  static async findOne<T extends typeof Model>(this: T, scoped?: Scoped) {
     let query = this.select()
     if (scoped) query = scoped(query)
 
@@ -305,7 +302,7 @@ export class ModelClass {
     return asData(data && (new this().$take(data) as InstanceType<T>))
   }
 
-  static async find<T extends typeof ModelClass>(this: T, id: ID) {
+  static async find<T extends typeof Model>(this: T, id: ID) {
     const { data, error } = await this.findOne((where) =>
       where.eq(String(this.primaryKey), id),
     )
@@ -315,7 +312,7 @@ export class ModelClass {
   }
 
   static async withClient<DB = any>(
-    this: typeof ModelClass,
+    this: typeof Model,
     client: SupabaseClient<DB>,
     result: () => any,
   ) {
@@ -364,7 +361,7 @@ export class ModelClass {
     return merge(this, options)
   }
 
-  static extend<T extends typeof ModelClass, Attrs extends Attributes>(
+  static extend<T extends typeof Model, Attrs extends Attributes>(
     this: T,
     attributes: Attrs,
     options: Partial<ModelOptions> = {},
@@ -399,4 +396,4 @@ export class ModelClass {
     return model as Model
   }
 }
-export default ModelClass
+export default Model

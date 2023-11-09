@@ -20,7 +20,7 @@ import type {
 } from '@supabase/postgrest-js'
 
 import type { Simplify } from 'type-fest'
-import type { ModelClass } from './model'
+import type { Model } from './model'
 import type { SupamodelError } from './errors'
 
 export type Extend<T, E> = E & Omit<T, keyof E>
@@ -35,7 +35,7 @@ export type mayBe<Type> = Type | null | undefined
 export type ID = string | number
 
 export type ModelConfigOptions<DB = any> = {
-  base?: typeof ModelClass
+  base?: typeof Model
   client?:
     | SupabaseClient<DB>
     | {
@@ -48,7 +48,7 @@ export type ModelConfigOptions<DB = any> = {
 }
 
 export interface ModelConfig<DB = any> {
-  base: typeof ModelClass
+  base: typeof Model
   client: SupabaseClient<DB>
   primaryKey: string
   naming: KeyMapper

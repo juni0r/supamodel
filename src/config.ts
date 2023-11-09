@@ -1,9 +1,9 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { snakeCase } from './util'
-import { ModelClass } from './model'
+import { Model } from './model'
 import type { Attributes, ModelConfigOptions, ModelOptions } from './types'
 
-export let baseModel: typeof ModelClass = ModelClass
+export let baseModel: typeof Model = Model
 export default baseModel
 
 export function configureSupamodel<DB = any>(options: ModelConfigOptions<DB>) {
@@ -14,13 +14,13 @@ export function configureSupamodel<DB = any>(options: ModelConfigOptions<DB>) {
     if (!isSupabaseClient(client)) {
       client = createClient<DB>(client.url, client.key)
     }
-    ModelClass.client = client
+    Model.client = client
   }
-  if (naming) ModelClass.naming = naming
-  if (primaryKey) ModelClass.primaryKey = primaryKey
+  if (naming) Model.naming = naming
+  if (primaryKey) Model.primaryKey = primaryKey
 
-  ModelClass.naming ??= snakeCase
-  ModelClass.primaryKey ??= 'id' as const
+  Model.naming ??= snakeCase
+  Model.primaryKey ??= 'id' as const
 }
 
 export function defineModel<Attrs extends Attributes>(
