@@ -1,6 +1,14 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 
-import { asData, failWith, pluralize, identity, DirtyDict, Dict } from './util'
+import {
+  asData,
+  failWith,
+  pluralize,
+  snakeCase,
+  identity,
+  DirtyDict,
+  Dict,
+} from './util'
 import { defaultsOf, zodSchemaOf } from './schema'
 import { Issues } from './issues'
 import {
@@ -33,14 +41,16 @@ import type {
   ID,
 } from './types'
 
+export type ModelClass = typeof Model
+
 export class Model {
   static client: SupabaseClient<any, any, any>
   static schema: ZodObjectOf<Attributes>
   static transforms: Dict<Transform>
   static defaults: DefaultsOf<Attributes>
-  static naming: KeyMapper
-  static primaryKey: string
   static scope: Dict
+  static naming: KeyMapper = snakeCase
+  static primaryKey = 'id'
 
   static get tableName() {
     return (this.tableName = pluralize(this.naming(this.name)))

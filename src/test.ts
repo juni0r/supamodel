@@ -1,52 +1,17 @@
-class Many<T> extends Array<T> implements PromiseLike<T> {
-  private fetch: () => Promise<T[]>
-  private result: ReturnType<typeof this.fetch>
-  loaded = false
-  loading = false
+import 'dotenv/config'
+import './luxon.inspect.custom'
+// import Session from './session'
+import { configureSupamodel } from './config'
 
-  constructor(fetch: () => Promise<T[]>, preload = true) {
-    super()
-    this.fetch = fetch
-    this.result = Promise.resolve([])
-    if (preload) this.load()
-  }
+const { SUPABASE_URL: url = '', SUPABASE_KEY: key = '' } = process.env
 
-  load() {
-    if (this.loading) return this.result
+configureSupamodel({ client: { key, url } })
 
-    this.loading = true
-
-    this.result = this.fetch()
-      .then((data) => {
-        this.length = 0
-        this.push(...data)
-        this.loaded = true
-        return data
-      })
-      .finally(() => {
-        this.loading = false
-      })
-    return this.result
-  }
-
-  then<TResult1 = typeof this>(...args: Parameters<Promise<TResult1>['then']>) {
-    if (!this.loaded && !this.loading) {
-      this.load()
-    }
-    this.result = this.result.then(...(args as any))
-    return this
-  }
-}
-
-const many = new Many(() =>
-  fetch('https://654a17d6e182221f8d527c74.mockapi.io/users').then<[]>(
-    (response) => response.json(),
-  ),
-)
-
-;(async function () {
-  console.log(many.loaded)
-  console.log(await many)
-  console.log(many.loaded)
-  console.log(many)
-})()
+import('./session').then(async ({ default: Session }) => {
+  Session.signInWithPassword({
+    email: 'andreas.korth@gmail.com',
+    password: 'rosebush',
+  }).then(async (session) => {
+    console.dir(session.toJSON(), { depth: 5 })
+  })
+})
