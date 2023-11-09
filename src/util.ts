@@ -9,11 +9,12 @@ const New = <T extends AnyObject = AnyObject, U = T>(
 ) => Object.assign(Object.create(null), ...defaults) as U
 
 type Dict<T = any> = Record<string, T>
-const Dict = <T>(...defaults: Dict<T>[]) => New<Dict<T>>(...defaults)
+function Dict<T>(...defaults: Dict<T>[]) {
+  return New<Dict<T>>(...defaults)
+}
 
 type DirtyDict<T extends AnyObject = Dict> = T & DirtyDecorator<T>
-
-function TrackedDirty<T extends AnyObject = Dict>(dict: T = Dict() as any) {
+function DirtyDict<T extends Dict = Dict>(dict: T = Dict() as any) {
   return trackDirty(dict) as DirtyDict<T>
 }
 
@@ -56,7 +57,7 @@ export {
   asData,
   failWith,
   trackDirty,
-  TrackedDirty,
+  DirtyDict,
   DirtyDecorator,
   scoped,
   keysOf,
@@ -67,4 +68,3 @@ export {
   kebabCase,
   pluralize,
 }
-export type { DirtyDict }

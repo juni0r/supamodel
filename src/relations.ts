@@ -1,8 +1,8 @@
-import BaseModel from './baseModel'
+import Model from './model'
 
-type Model = typeof BaseModel
+type ModelClass = typeof Model
 
-abstract class Relation<Source extends Model, Target extends Model> {
+abstract class Relation<Source extends ModelClass, Target extends ModelClass> {
   constructor(
     public source: Source,
     public target: Target,
@@ -16,8 +16,8 @@ abstract class Relation<Source extends Model, Target extends Model> {
 }
 
 export class HasMany<
-  Source extends Model,
-  Target extends Model,
+  Source extends ModelClass,
+  Target extends ModelClass,
 > extends Relation<Source, Target> {
   async loadTarget(
     source: InstanceType<Source>,
@@ -53,8 +53,8 @@ export class HasMany<
 }
 
 export class BelongsTo<
-  Source extends Model,
-  Target extends Model,
+  Source extends ModelClass,
+  Target extends ModelClass,
 > extends Relation<Source, Target> {
   async loadTarget(
     source: InstanceType<Source>,
@@ -68,8 +68,8 @@ export class BelongsTo<
 }
 
 export class HasOne<
-  Source extends Model,
-  Target extends Model,
+  Source extends ModelClass,
+  Target extends ModelClass,
 > extends Relation<Source, Target> {
   async loadTarget(
     source: InstanceType<Source>,

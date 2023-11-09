@@ -3,10 +3,20 @@ export type * from './types'
 export { z, z as zod } from 'zod'
 export { DateTime } from 'luxon'
 
-export { BaseModel } from './baseModel'
 export { Issues } from './issues'
-export { configureSupamodel, baseModel } from './config'
-export { defineModel, withClient } from './model'
+export { ModelClass as BaseModel } from './model'
 export { transform, datetime, attr, attr as $ } from './schema'
 export { camelCase, snakeCase, kebabCase, pluralize } from './util'
-export { RecordNotFound, RecordNotSaved, RecordNotDeleted } from './errors'
+export {
+  SupamodelError,
+  RecordInvalid,
+  RecordNotFound,
+  RecordNotSaved,
+  RecordNotDeleted,
+} from './errors'
+export {
+  configureSupamodel,
+  baseModel,
+  defineModel,
+  withClient,
+} from './config'

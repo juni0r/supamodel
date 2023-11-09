@@ -1,9 +1,9 @@
-import { type SupabaseClient, createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { snakeCase } from './util'
-import { BaseModel } from './baseModel'
-import type { ModelConfigOptions } from './types'
+import { ModelClass } from './model'
+import type { Attributes, ModelConfigOptions, ModelOptions } from './types'
 
-export let baseModel: typeof BaseModel = BaseModel
+export let baseModel: typeof ModelClass = ModelClass
 export default baseModel
 
 export function configureSupamodel<DB = any>(options: ModelConfigOptions<DB>) {
@@ -14,27 +14,27 @@ export function configureSupamodel<DB = any>(options: ModelConfigOptions<DB>) {
     if (!isSupabaseClient(client)) {
       client = createClient<DB>(client.url, client.key)
     }
-    BaseModel.client = client
+    ModelClass.client = client
   }
-  if (naming) BaseModel.naming = naming
-  if (primaryKey) BaseModel.primaryKey = primaryKey
+  if (naming) ModelClass.naming = naming
+  if (primaryKey) ModelClass.primaryKey = primaryKey
 
-  BaseModel.naming ??= snakeCase
-  BaseModel.primaryKey ??= 'id' as const
+  ModelClass.naming ??= snakeCase
+  ModelClass.primaryKey ??= 'id' as const
 }
 
-export function supabaseEnv() {
-  const { SUPABASE_URL: url, SUPABASE_KEY: key } = process.env
-
-  if (!(url && key))
-    throw new Error(
-      `Failed to auto-configure supabase-model. Set SUPABASE_URL and SUPABASE_KEY environment variables, or specify 'client' option to  ${configureSupamodel.name}.`,
-    )
-
-  return { url, key }
+export function defineModel<Attrs extends Attributes>(
+  attributes: Attrs,
+  options: Partial<ModelOptions> = {},
+) {
+  return baseModel.extend(attributes, options)
 }
 
-export function isSupabaseClient(
+export function withClient<DB>(client: SupabaseClient<DB>, execute: () => any) {
+  return baseModel.withClient(client, execute)
+}
+
+function isSupabaseClient(
   object: any,
 ): object is SupabaseClient<any, any, any> {
   return 'supabaseUrl' in object && 'supabaseKey' in object

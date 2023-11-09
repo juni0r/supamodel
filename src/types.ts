@@ -20,7 +20,7 @@ import type {
 } from '@supabase/postgrest-js'
 
 import type { Simplify } from 'type-fest'
-import type { BaseModel } from './baseModel'
+import type { ModelClass } from './model'
 import type { SupamodelError } from './errors'
 
 export type Extend<T, E> = E & Omit<T, keyof E>
@@ -35,7 +35,7 @@ export type mayBe<Type> = Type | null | undefined
 export type ID = string | number
 
 export type ModelConfigOptions<DB = any> = {
-  base?: typeof BaseModel
+  base?: typeof ModelClass
   client?:
     | SupabaseClient<DB>
     | {
@@ -48,7 +48,7 @@ export type ModelConfigOptions<DB = any> = {
 }
 
 export interface ModelConfig<DB = any> {
-  base: typeof BaseModel
+  base: typeof ModelClass
   client: SupabaseClient<DB>
   primaryKey: string
   naming: KeyMapper
@@ -70,11 +70,11 @@ export interface Attribute<Z extends ZodSchema = any> {
   emit: (value: TypeOf<Z>) => any
 }
 
-export type AttributeOptions<Z extends ZodSchema> = Partial<
+export type AttributeOptions<Z extends ZodSchema = any> = Partial<
   Omit<Attribute<Z>, 'type'>
 >
 
-export type ZodSchemaOf<Attrs extends Attributes> = ZodObject<ShapeOf<Attrs>>
+export type ZodObjectOf<Attrs extends Attributes> = ZodObject<ShapeOf<Attrs>>
 
 export type SchemaOf<T> = Simplify<{
   [k in keyof T]: T[k] extends Attribute<any> ? TypeOf<T[k]['type']> : never
@@ -83,6 +83,12 @@ export type SchemaOf<T> = Simplify<{
 export type ShapeOf<T> = Simplify<{
   [k in keyof T]: T[k] extends Attribute<any> ? T[k]['type'] : never
 }>
+
+export type TransformsOf<T> = {
+  [k in keyof T]: T[k] extends Attribute<any>
+    ? Simplify<Omit<T[k], 'type'>>
+    : never
+}
 
 export type DefaultType<
   T extends ZodTypeAny,
