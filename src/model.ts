@@ -165,6 +165,7 @@ export class Model {
       onlyChanges = true,
     }: { validate?: boolean; onlyChanges?: boolean } = {},
   ) {
+    const record = this.$emit({ onlyChanges })
     if (onlyChanges && !this.$isDirty) return asData(this)
 
     if (validate) {
@@ -172,10 +173,7 @@ export class Model {
       if (issues.any) return failWith(RecordInvalid, issues)
     }
 
-    const { client, tableName, primaryKey } = this.$model
-
-    const table = client.from(tableName)
-    const record = this.$emit({ onlyChanges })
+    const { table, primaryKey } = this.$model
 
     const { error, data } = await (this.$isPersisted
       ? table.update(record).eq(primaryKey, this.$id)
@@ -184,14 +182,7 @@ export class Model {
       .select()
       .maybeSingle()
 
-    if (error) {
-      return failWith(RecordNotSaved, error)
-    }
-
-    this.$attributes.$commit()
-    this.$take(data)
-
-    return asData(this)
+    return error ? failWith(RecordNotSaved, error) : asData(this.$take(data))
   }
 
   async updateAttributes<T extends Model>(
@@ -241,14 +232,16 @@ export class Model {
     )
   }
 
+  static get table() {
+    return this.client.from(this.tableName)
+  }
+
   static insert(record: Dict) {
-    return this.client.from(this.tableName).insert(record)
+    return this.table.insert(record)
   }
 
   static select<T extends typeof Model>(this: T, columns = '*' as const) {
-    return this.scoped(
-      this.client.from(this.tableName).select<typeof columns, T>(columns),
-    )
+    return this.scoped(this.table.select<typeof columns, T>(columns))
   }
 
   static update(id: ID, record: Dict) {
