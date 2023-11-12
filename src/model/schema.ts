@@ -18,7 +18,7 @@ export default <Attrs extends Attributes>(
   return <T extends typeof Base>(base: T) => {
     type Schema = SchemaOf<Attrs>
 
-    class AttributesMixin extends base {
+    class SchemaMixin extends base {
       static naming = naming
       static schema = zodSchemaOf(attributes)
       static defaults = defaultsOf(attributes)
@@ -29,7 +29,7 @@ export default <Attrs extends Attributes>(
     }
 
     for (const key in attributes) {
-      Object.defineProperty(AttributesMixin.prototype, key, {
+      Object.defineProperty(SchemaMixin.prototype, key, {
         get() {
           return this.$attributes[key]
         },
@@ -40,10 +40,10 @@ export default <Attrs extends Attributes>(
     }
 
     type AttributesClass = Extend<
-      typeof AttributesMixin,
+      typeof SchemaMixin,
       Constructable<
         Extend<
-          AttributesMixin,
+          SchemaMixin,
           {
             $model: AttributesClass
             $initial<K extends keyof Schema>(key: K): Schema[K]
@@ -54,6 +54,6 @@ export default <Attrs extends Attributes>(
       >
     >
 
-    return AttributesMixin as AttributesClass
+    return SchemaMixin as AttributesClass
   }
 }

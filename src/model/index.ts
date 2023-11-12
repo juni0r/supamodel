@@ -32,9 +32,10 @@ export function configureSupamodel<Ext extends ModelClass>({
 
 export function defineModel<Attrs extends Attributes>(
   attributes: Attrs,
-  modelOptions?: ModelOptions<Attrs>,
+  _options?: ModelOptions<Attrs>,
 ) {
-  const { extend, ...options } = { ...config, ...modelOptions } as ModelConfig
+  const { extend, ...options } = { ...config, ..._options } as ModelConfig
+
   return mix(Base).with(
     Schema(attributes, options),
     Persistence(options),
@@ -42,8 +43,8 @@ export function defineModel<Attrs extends Attributes>(
   )
 }
 
-const Model = () => mix(Base).with(Persistence())
 export type ModelClass = ReturnType<typeof Model>
+const Model = () => mix(Base).with(Persistence())
 
 function isSupabaseClient(object: any): object is SupabaseClient {
   return 'supabaseUrl' in object && 'supabaseKey' in object

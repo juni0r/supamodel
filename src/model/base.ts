@@ -8,22 +8,23 @@ import forEach from 'lodash.foreach'
 import type {
   ModelOptions,
   Attributes,
-  Transform,
   ZodObjectOf,
   DefaultsOf,
   KeyMapper,
   ToJSON,
+  ScopeOf,
+  TransformsOf,
 } from '../types'
 import transform from 'lodash.transform'
 
 export type BaseClass = typeof Base
 
 export class Base {
-  static schema: ZodObjectOf<Attributes>
-  static transforms: Dict<Transform>
-  static defaults: DefaultsOf<Attributes>
   static naming: KeyMapper
-  static scope: Dict
+  static schema: ZodObjectOf<Attributes>
+  static transforms: TransformsOf<Attributes>
+  static defaults: DefaultsOf<Attributes>
+  static scope: ScopeOf<Attributes>
 
   /**
    * This constructor signature is required in order to use Model as a
