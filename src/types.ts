@@ -1,3 +1,16 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
+
+import type {
+  GenericSchema,
+  GenericTable,
+  GenericView,
+} from '@supabase/supabase-js/dist/module/lib/types'
+
+import type {
+  PostgrestFilterBuilder,
+  PostgrestQueryBuilder,
+} from '@supabase/postgrest-js'
+
 import type {
   ZodObject,
   TypeOf,
@@ -8,21 +21,15 @@ import type {
   ZodTypeAny,
 } from 'zod'
 
-import type { SupabaseClient } from '@supabase/supabase-js'
-import type {
-  GenericSchema,
-  GenericTable,
-  GenericView,
-} from '@supabase/supabase-js/dist/module/lib/types'
-import type {
-  PostgrestFilterBuilder,
-  PostgrestQueryBuilder,
-} from '@supabase/postgrest-js'
-
-import type { Simplify } from 'type-fest'
-import type { Model } from './model'
+import type { Relation } from './relations/relation'
 import type { SupamodelError } from './errors'
+import { mixin } from 'mixwith.ts'
 
+import type { ModelClass } from './model'
+export type { ModelClass }
+
+// eslint-disable-next-line @typescript-eslint/ban-types
+export type Simplify<T> = { [k in keyof T]: T[k] } & {}
 export type Extend<T, E> = E & Omit<T, keyof E>
 
 export type anyKey = string | number | symbol
@@ -30,14 +37,14 @@ export interface AnyObject<T = any> {
   [key: anyKey]: T
 }
 
+export type maybeArray<T> = T | T[]
 export type mayBe<Type> = Type | null | undefined
 
 export type ID = string | number
 
-export type ModelConfigOptions<DB = any> = {
-  base?: typeof Model
+export interface ModelConfigOptions<Ext extends ModelClass = ModelClass> {
   client?:
-    | SupabaseClient<DB>
+    | SupabaseClient
     | {
         url: string
         key: string
@@ -45,16 +52,21 @@ export type ModelConfigOptions<DB = any> = {
       }
   primaryKey?: string
   naming?: KeyMapper
+  extend?: mixin<ModelClass, Ext>
 }
 
-export interface ModelConfig<DB = any> {
-  base: typeof Model
-  client: SupabaseClient<DB>
+export interface ModelConfig<Ext extends ModelClass = ModelClass> {
+  client: SupabaseClient
   primaryKey: string
   naming: KeyMapper
+  extend?: mixin<ModelClass, Ext>
 }
 
-export type ModelOptions<DB = any> = ModelConfig<DB> & { tableName: string }
+export interface ModelOptions<A extends Attributes = Attributes> {
+  naming?: KeyMapper
+  tableName?: string
+  primaryKey?: keyof A
+}
 
 export type Attributes = Record<string, Attribute>
 
@@ -107,6 +119,27 @@ export type DefaultType<
   : D extends ZodDefault<infer I>
   ? () => TypeOf<I>
   : never
+
+export interface ClassProxy<T extends ModelClass = ModelClass> {
+  (): T
+}
+export type ResolveClass<Proxy extends ClassProxy> = Proxy extends ClassProxy<
+  infer T
+>
+  ? T
+  : never
+
+export type Relations = Record<string, Relation>
+export type RelationOptions = Record<string, RelationOption>
+
+export interface RelationOption<
+  R extends typeof Relation = any,
+  T extends ModelClass = any,
+> {
+  type: R
+  target: ClassProxy<T>
+  foreignKey?: keyof T['schema']
+}
 
 export interface KeyMapper {
   (key: string): string

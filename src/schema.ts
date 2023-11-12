@@ -12,7 +12,10 @@ import type {
   ShapeOf,
   AnyObject,
   DefaultsOf,
+  KeyMapper,
+  TransformsOf,
 } from './types'
+import { identity } from './util'
 
 export function zodSchemaOf<A extends Attributes>(attributes: A) {
   return object(mapValues(attributes, 'type') as ShapeOf<A>)
@@ -85,18 +88,13 @@ export function defaultsOf<T extends Attributes>(attrs: T) {
   ) as DefaultsOf<T>
 }
 
-// export function defaultsOf<S extends ZodRawShape>(shape: S) {
-//   return _transform(
-//     shape,
-//     (defaults, schema, key) => {
-//       schema = deoptional(schema)
-
-//       if (schema instanceof ZodNullable) {
-//         defaults[key] = () => null
-//       } else if (schema instanceof ZodDefault) {
-//         defaults[key] = schema._def.defaultValue
-//       }
-//     },
-//     {} as AnyObject,
-//   ) as DefaultsOf<S>
-// }
+export function transformsOf<Attrs extends Attributes>(
+  attributes: Attrs,
+  naming: KeyMapper,
+) {
+  return mapValues(attributes, ({ column, take, emit }, key) => ({
+    column: column ?? naming(key),
+    take: take ?? identity,
+    emit: emit ?? identity,
+  })) as TransformsOf<Attrs>
+}

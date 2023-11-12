@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { Expect } from './support/util'
-import { DateTime, ID } from '../src'
+import { DateTime } from '../src'
 import { Subject } from './models'
 import {
   ZodDate,
@@ -32,19 +32,7 @@ describe('Attributes', () => {
       subject = Subject.take(attributes)
     })
 
-    it('can get', () => {
-      expect(subject.$get('givenName')).toBe('Stella')
-
-      Expect<string>()(subject.$get('givenName'))
-    })
-
-    it('can set', () => {
-      subject.$set('score', 99)
-      expect(subject.score).toBe(99)
-    })
-
     it('has getters', () => {
-      expect(subject.$id).toBe(123)
       expect(subject.id).toBe(123)
       expect(subject.givenName).toBe('Stella')
       expect(subject.familyName).toBe('Goldbacke')
@@ -52,7 +40,6 @@ describe('Attributes', () => {
       expect(subject.date).toEqual(new Date(isoDate))
       expect(subject.dateTime).toEqual(DateTime.fromISO(isoDate).toUTC())
 
-      Expect<ID>()(subject.$id)
       Expect<number>()(subject.id)
       Expect<string>()(subject.givenName)
       Expect<string>()(subject.familyName)
@@ -78,15 +65,6 @@ describe('Attributes', () => {
         date: new Date(iso),
         dateTime: DateTime.fromISO(iso),
       })
-
-      const { $set } = subject
-
-      Expect<(key: 'id', value: number) => void>()($set<'id'>)
-      Expect<(key: 'givenName', value: string) => void>()($set<'givenName'>)
-      Expect<(key: 'familyName', value: string) => void>()($set<'familyName'>)
-      Expect<(key: 'score', value: number) => void>()($set<'score'>)
-      Expect<(key: 'date', value: Date) => void>()($set<'date'>)
-      Expect<(key: 'dateTime', value: DateTime) => void>()($set<'dateTime'>)
     })
 
     it('works with assign', () => {
@@ -137,6 +115,7 @@ describe('Attributes', () => {
         givenName: 'given_name',
         familyName: 'last_name',
         score: 'score',
+        isOkay: 'is_okay',
         date: 'date',
         dateTime: 'date_time',
       })
@@ -183,11 +162,12 @@ describe('Attributes', () => {
     it('takes defaults', () => {
       subject = Subject.takeDefaults()
 
-      expect(subject.$attributes).toEqual({ score: 0 })
-      expect(subject.$changes).toEqual({ score: 0 })
+      expect(subject.$attributes).toEqual({ score: 0, isOkay: false })
+      expect(subject.$changes).toEqual({ score: 0, isOkay: false })
       expect(subject.$isDirty).toBe(true)
 
       expect(Subject.defaults.score()).toBe(0)
+      expect(Subject.defaults.isOkay()).toBe(false)
 
       Expect<() => number>()(Subject.defaults.score)
     })

@@ -9,5 +9,6 @@
     "comments": "#647279",
     "textMateRules": []
   },
+  "typescript.tsdk": "node_modules/typescript/lib",
   "testing.automaticallyOpenPeekView": "never"
 }

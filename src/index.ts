@@ -3,8 +3,8 @@ export type * from './types'
 export { z, z as zod } from 'zod'
 export { DateTime } from 'luxon'
 
-export { Issues } from './issues'
-export { Model as BaseModel } from './model'
+export { default as Issues } from './issues'
+export { configureSupamodel, defineModel, config } from './model'
 export { transforms, datetime, attr, attr as $ } from './schema'
 export { camelCase, snakeCase, kebabCase, pluralize } from './util'
 export {
@@ -14,9 +14,3 @@ export {
   RecordNotSaved,
   RecordNotDeleted,
 } from './errors'
-export {
-  configureSupamodel,
-  baseModel,
-  defineModel,
-  withClient,
-} from './config'

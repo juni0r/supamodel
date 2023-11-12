@@ -1,6 +1,5 @@
 import { defineModel, $, transforms, datetime } from '../src'
 import { string, date, number, boolean } from 'zod'
-
 import configureSupamodel from './support/configureSupamodel'
 
 configureSupamodel()
@@ -21,10 +20,7 @@ export class Subject extends defineModel({
   givenName: $(string()),
   familyName: $(string(), { column: 'last_name' }),
   score: $(number().default(0)),
+  isOkay: $(boolean().default(false)),
   date: $(date(), transforms.date),
   dateTime: $(datetime(), transforms.datetime),
-}) {
-  get name() {
-    return `${this.givenName} ${this.familyName}`
-  }
-}
+}) {}

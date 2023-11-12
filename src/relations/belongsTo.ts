@@ -1,4 +1,7 @@
-import { Relation, type ModelClass } from './relation'
+import { Relation } from './relation'
+import type { ModelClass } from '../types'
+
+export type BelongsToRelation = typeof BelongsTo
 
 export class BelongsTo<
   Source extends ModelClass,

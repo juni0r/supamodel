@@ -66,6 +66,7 @@
     "lodash.snakecase": "^4.1.1",
     "lodash.transform": "^4.6.0",
     "luxon": "^3.4.3",
+    "mixwith.ts": "^1.1.2",
     "zod": "^3.22.4"
   },
   "devDependencies": {

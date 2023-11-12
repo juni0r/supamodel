@@ -7,14 +7,14 @@ import configureSupamodel from './support/configureSupamodel'
 describe('Validation', () => {
   configureSupamodel()
 
-  class Subject extends model({
+  const Subject = model({
     givenName: $(string().trim().min(1)),
     familyName: $(string().nullable()),
     date: $(date(), transforms.date),
     dateTime: $(datetime(), transforms.datetime),
-  }) {}
+  })
 
-  let subject: Subject
+  let subject: InstanceType<typeof Subject>
 
   beforeEach(() => {
     subject = Subject.take({

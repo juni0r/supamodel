@@ -1,26 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { defineModel as model, $, transforms, datetime, DateTime } from '../src'
-import { string, date, number, boolean } from 'zod'
-
-import configureSupamodel from './support/configureSupamodel'
+import { DateTime } from '../src'
+import { Subject } from './models'
 
 describe('Model', () => {
-  configureSupamodel()
-
-  class Subject extends model({
-    name: $(string()),
-    position: $(number()),
-    isOkay: $(boolean()),
-    date: $(date(), transforms.date),
-    dateTime: $(datetime(), transforms.datetime),
-  }) {}
-
   let subject: Subject
 
   beforeEach(() => {
     subject = Subject.take({
-      name: 'Stella',
-      position: 23,
+      given_name: 'Stella',
       is_okay: true,
       date: '2020-02-02T02:02:02.020Z',
       date_time: '2020-02-02T02:02:02.020Z',
@@ -32,15 +19,15 @@ describe('Model', () => {
   })
 
   it('is dirty when string property is changed', () => {
-    subject.name = 'Henry'
+    subject.givenName = 'Henry'
     expect(subject.$isDirty).toBe(true)
-    expect(subject.$didChange('name')).toBe(true)
-    expect(subject.$initial('name')).toBe('Stella')
+    expect(subject.$didChange('givenName')).toBe(true)
+    expect(subject.$initial('givenName')).toBe('Stella')
 
-    subject.name = 'Stella'
+    subject.givenName = 'Stella'
     expect(subject.$isDirty).toBe(false)
-    expect(subject.$didChange('name')).toBe(false)
-    expect(subject.$initial('name')).toBe('Stella')
+    expect(subject.$didChange('givenName')).toBe(false)
+    expect(subject.$initial('givenName')).toBe('Stella')
   })
 
   it('is dirty when date property is changed', () => {
@@ -82,14 +69,14 @@ describe('Model', () => {
 
   it('works with assign', () => {
     Object.assign(subject, {
-      name: 'Steffi',
+      givenName: 'Steffi',
       date: new Date(2000, 0, 1),
     })
 
-    expect(subject.$didChange('name')).toBe(true)
+    expect(subject.$didChange('givenName')).toBe(true)
     expect(subject.$didChange('date')).toBe(true)
 
-    expect(subject.name).toBe('Steffi')
+    expect(subject.givenName).toBe('Steffi')
     expect(subject.date).toEqual(new Date(2000, 0, 1))
   })
 })
