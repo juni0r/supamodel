@@ -7,7 +7,7 @@ export { Relation } from './relation'
 
 export function hasMany<T extends ModelClass>(
   target: ClassProxy<T>,
-  foreignKey: string = 'id',
+  foreignKey = 'id',
 ): RelationOption<HasManyRelation, T> {
   return {
     type: HasMany,
@@ -18,7 +18,7 @@ export function hasMany<T extends ModelClass>(
 
 export function belongsTo<T extends ModelClass>(
   target: ClassProxy<T>,
-  foreignKey: string = 'id',
+  foreignKey = 'id',
 ): RelationOption<BelongsToRelation, T> {
   return {
     type: BelongsTo,

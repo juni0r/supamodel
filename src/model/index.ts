@@ -1,11 +1,11 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { mix } from 'mixwith.ts'
-
-import Base from './base'
-import Schema, { defaults as schemaDefaults } from './schema'
-import Persistence, { defaults as persistenceDefaults } from './persistence'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
 import merge from 'lodash.merge'
+
+import Base from './base'
+import Schema, { defaults as schemaConfig } from './schema'
+import Persistence, { defaults as persistenceConfig } from './persistence'
 
 import type {
   Attributes,
@@ -16,8 +16,8 @@ import type {
 
 export let config: ModelConfig = {
   client: null as unknown as SupabaseClient,
-  ...schemaDefaults,
-  ...persistenceDefaults,
+  ...schemaConfig,
+  ...persistenceConfig,
 }
 
 export function configureSupamodel<Ext extends ModelClass>({
@@ -42,9 +42,8 @@ export function defineModel<Attrs extends Attributes>(
     ...(extend ? [extend] : []),
   )
 }
-
-export type ModelClass = ReturnType<typeof Model>
-const Model = () => mix(Base).with(Persistence())
+const model = () => mix(Base).with(Persistence())
+export type ModelClass = ReturnType<typeof model>
 
 function isSupabaseClient(object: any): object is SupabaseClient {
   return 'supabaseUrl' in object && 'supabaseKey' in object

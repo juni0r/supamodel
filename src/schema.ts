@@ -34,21 +34,21 @@ export const datetime = () =>
     { message: 'Invalid DateTime', params: { code: 'invalid-datetime' } },
   )
 
-function dateFromISO(iso: mayBe<string>) {
+export function dateFromISO(iso: mayBe<string>) {
   return new Date(iso ?? 'invalid')
 }
 
-function ISOFromDate(date: mayBe<Date>) {
+export function ISOFromDate(date: mayBe<Date>) {
   return date?.toISOString() ?? ''
 }
 
-function dateTimeFromISO(iso: mayBe<string>) {
+export function dateTimeFromISO(iso: mayBe<string>) {
   return iso
     ? DateTime.fromISO(iso, { zone: 'utc' })
     : DateTime.invalid('unable to parse from empty ISO string')
 }
 
-function ISOFromDateTime(date: mayBe<DateTime>) {
+export function ISOFromDateTime(date: mayBe<DateTime>) {
   return date?.toUTC().toISO() ?? ''
 }
 

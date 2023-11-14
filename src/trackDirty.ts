@@ -24,9 +24,9 @@ export function trackDirty<T extends AnyObject>(object: T) {
 
   function $revert() {
     Object.entries($initial).forEach(([key, value]) => {
-      if (value !== undefined) {
-        object[key as keyof T] = value
-      } else delete object[key]
+      value !== undefined
+        ? (object[key as keyof T] = value)
+        : delete object[key]
     })
     return $commit()
   }
@@ -49,24 +49,32 @@ export function trackDirty<T extends AnyObject>(object: T) {
   }
 
   const proxy = new Proxy(object, {
-    get(target, prop, value) {
+    get(target, prop, receiver) {
       if (prop in decorator) {
         return decorator[prop as keyof typeof decorator]
       }
-      return Reflect.get(target, prop, value)
+      return Reflect.get(target, prop, receiver)
     },
 
     set(target, prop, value, receiver) {
-      const initial = Reflect.get(target, prop, receiver)
+      const current = Reflect.get(target, prop, receiver)
 
       if (prop in $initial) {
         if (isEqual($initial[prop], value)) delete $initial[prop]
       } else {
-        if (isEqual(initial, value)) return true
-        $initial[prop as keyof T] = initial
+        if (isEqual(current, value)) return true
+        $initial[prop as keyof T] = current
       }
 
-      return Reflect.set(target, prop, value, receiver)
+      return value !== undefined
+        ? Reflect.set(target, prop, value, receiver)
+        : Reflect.deleteProperty(target, prop)
+    },
+
+    deleteProperty(target, prop) {
+      if (prop in $initial && $initial[prop] === undefined)
+        delete $initial[prop]
+      return Reflect.deleteProperty(target, prop)
     },
   }) as DirtyProxy<T>
 

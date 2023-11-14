@@ -12,25 +12,23 @@ import {
 
 import type { FilterBuilder, Scoped, ID } from '../types'
 
-export interface Options {
+export interface Config {
   client: SupabaseClient
   primaryKey: string
 }
 
-export const defaults: Omit<Options, 'client'> = {
+export const defaults: Omit<Config, 'client'> = {
   primaryKey: 'id',
 }
 
-export default (
-  options: Partial<
-    Options & {
-      tableName: string
-    }
-  > = {},
-) => {
+interface Options extends Config {
+  tableName: string
+}
+
+export default (options: Partial<Options> = {}) => {
   const { client, tableName, primaryKey } = { ...defaults, ...options }
 
-  return <T extends typeof Base>(base: T) => {
+  return function mixin<T extends typeof Base>(base: T) {
     type PersistenceClass = typeof Persistence
 
     class Persistence extends base {

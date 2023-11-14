@@ -1,21 +1,20 @@
-import type { Constructable } from 'mixwith.ts'
+import type { BaseClass } from './base'
 import type { Attributes, Extend, KeyMapper, SchemaOf } from '../types'
-import { DirtyDict, New, snakeCase } from '../util'
 import { defaultsOf, transformsOf, zodSchemaOf } from '../schema'
-import Base from './base'
+import { DirtyDict, New, snakeCase } from '../util'
 
-export interface Options {
+export interface Config {
   naming: KeyMapper
 }
-export const defaults: Options = { naming: snakeCase }
+export const defaults: Config = { naming: snakeCase }
 
 export default <Attrs extends Attributes>(
   attributes: Attrs,
-  options: Partial<Options> = {},
+  options: Partial<Config> = {},
 ) => {
   const { naming } = { ...defaults, ...options }
 
-  return <T extends typeof Base>(base: T) => {
+  return function mixin<T extends BaseClass>(base: T) {
     type Schema = SchemaOf<Attrs>
 
     class SchemaMixin extends base {
@@ -23,7 +22,7 @@ export default <Attrs extends Attributes>(
       static schema = zodSchemaOf(attributes)
       static defaults = defaultsOf(attributes)
       static transforms = transformsOf(attributes, naming)
-      static scope = New<Schema>()
+      static scope = New<Partial<Schema>>()
 
       declare $attributes: DirtyDict<Schema>
     }
@@ -39,21 +38,21 @@ export default <Attrs extends Attributes>(
       })
     }
 
-    type AttributesClass = Extend<
+    type MixinClass = Extend<
       typeof SchemaMixin,
-      Constructable<
-        Extend<
+      {
+        new (...args: any): Extend<
           SchemaMixin,
           {
-            $model: AttributesClass
+            $model: MixinClass
             $initial<K extends keyof Schema>(key: K): Schema[K]
             $didChange<K extends keyof Schema>(key: K): boolean
           }
         > &
           Schema
-      >
+      }
     >
 
-    return SchemaMixin as AttributesClass
+    return SchemaMixin as MixinClass
   }
 }
