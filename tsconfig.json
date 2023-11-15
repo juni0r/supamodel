@@ -8,6 +8,14 @@
     "types": ["node"],
     "typeRoots": ["./node_modules/@types"],
 
+    "baseUrl": ".",
+    "paths": {
+      "@/src": ["src"],
+      "@/src/*": ["src/*"],
+      "@/test": ["test"],
+      "@/test/*": ["test/*"],
+    },
+
     /* Linting */
     "strict": true,
     "skipLibCheck": true,    

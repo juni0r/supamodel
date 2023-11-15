@@ -42,7 +42,7 @@ export type mayBe<Type> = Type | null | undefined
 
 export type ID = string | number
 
-export interface ModelConfigOptions<Ext extends ModelClass = ModelClass> {
+export interface ModelConfigOptions<Ext = ModelClass> {
   client?:
     | SupabaseClient
     | {
@@ -55,7 +55,7 @@ export interface ModelConfigOptions<Ext extends ModelClass = ModelClass> {
   extend?: mixin<ModelClass, Ext>
 }
 
-export interface ModelConfig<Ext extends ModelClass = ModelClass> {
+export interface ModelConfig<Ext = ModelClass> {
   client: SupabaseClient
   primaryKey: string
   naming: KeyMapper

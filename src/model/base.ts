@@ -1,9 +1,12 @@
+import { mix, mixin } from 'mixwith.ts'
+
 import { Issues } from '../issues'
 import { DirtyDict, Dict } from '../util'
 
 import merge from 'lodash.merge'
 import result from 'lodash.result'
 import forEach from 'lodash.foreach'
+import transform from 'lodash.transform'
 
 import type {
   ModelOptions,
@@ -15,7 +18,6 @@ import type {
   ScopeOf,
   TransformsOf,
 } from '../types'
-import transform from 'lodash.transform'
 
 export type BaseClass = typeof Base
 
@@ -136,6 +138,26 @@ export class Base {
 
   static configure<Attrs extends Attributes>(options: ModelOptions<Attrs>) {
     return merge(this, options)
+  }
+
+  static with<
+    This extends BaseClass,
+    A extends BaseClass,
+    B extends BaseClass,
+    C extends BaseClass,
+    D extends BaseClass,
+    E extends BaseClass,
+    F extends BaseClass,
+  >(
+    this: This,
+    a: mixin<This, A>,
+    b?: mixin<A, B>,
+    c?: mixin<B, C>,
+    d?: mixin<C, D>,
+    e?: mixin<D, E>,
+    f?: mixin<E, F>,
+  ) {
+    return mix(this).with<A, B, C, D, E, F>(a, b, c, d, e, f)
   }
 }
 export default Base

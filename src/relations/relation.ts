@@ -6,12 +6,47 @@ type RelationOptions = {
   foreignKey?: string
 }
 
+export class RelationProxy<T> implements PromiseLike<T> {
+  target!: T
+  result?: Promise<typeof this.target>
+  loaded = false
+  loading = false
+
+  constructor(
+    public relation: Relation,
+    public source: InstanceType<(typeof relation)['source']>,
+  ) {}
+
+  load() {
+    if (this.loading) return this.result!
+
+    this.loading = true
+
+    this.result = this.relation
+      .loadTarget(this.source)
+      .then((data) => {
+        this.loaded = true
+        return (this.target = data as typeof this.target)
+      })
+      .finally(() => {
+        this.loading = false
+      })
+
+    return this.result
+  }
+
+  then<TResult1 = typeof this>(...args: Parameters<Promise<TResult1>['then']>) {
+    this.result = (this.result ?? this.load()).then(...(args as any))
+    return this
+  }
+}
+
 export class Relation<
   Source extends ModelClass = ModelClass,
   Target extends ModelClass = ModelClass,
 > {
-  public key: string
-  public foreignKey: string
+  key: string
+  foreignKey: string
 
   constructor(
     public source: Source,
@@ -22,61 +57,24 @@ export class Relation<
     this.foreignKey = options.foreignKey ?? target.primaryKey
   }
 
+  get type() {
+    return this.constructor as typeof Relation
+  }
+
   scope(source: InstanceType<Source>): [string, any] {
     return [this.foreignKey, String((source as any)[this.key])]
   }
 
-  createProxy() {
-    return new RelationProxy(this)
+  createProxy(source: InstanceType<Source>): RelationProxy<any> {
+    throw new Error('Subclasses of Relation have to implement createProxy')
+    source
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  loadTarget(_source: InstanceType<Source>) {
-    return Promise.resolve(null) as Promise<maybeArray<
-      InstanceType<Target>
-    > | null>
+  async loadTarget(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _source: InstanceType<Source>,
+  ): Promise<maybeArray<InstanceType<Target>> | null> {
+    return Promise.resolve(null)
   }
 }
 export default Relation
-
-export class RelationProxy<T> implements PromiseLike<T> {
-  result: Promise<T | null>
-  loaded = false
-  loading = false
-
-  constructor(
-    public relation: Relation, // public source: InstanceType<(typeof relation)['source']>,
-  ) {
-    this.result = Promise.resolve(null)
-  }
-
-  load() {
-    if (this.loading) return this.result
-
-    this.loading = true
-
-    // this.result = this.relation
-    //   .loadTarget()
-    //   .then((data) => {
-    //     this.loaded = true
-    //     return this.loadDone(data)
-    //   })
-    //   .finally(() => {
-    //     this.loading = false
-    //   })
-
-    return this.result
-  }
-
-  protected loadDone(data: Awaited<typeof this.result>) {
-    return data
-  }
-
-  then<TResult1 = typeof this>(...args: Parameters<Promise<TResult1>['then']>) {
-    if (!this.loaded && !this.loading) {
-      this.load()
-    }
-    this.result = this.result.then(...(args as any))
-    return this
-  }
-}
